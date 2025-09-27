@@ -74,7 +74,7 @@
   </div>
 
 <script>
-  let players = []; let selected = 0;
+  let players = []; let selected = 0; let currentTab = "home";
   const el = {
     tabs:  document.getElementById('tabs'),
     crumb: document.getElementById('crumb'),
@@ -105,6 +105,7 @@
   }
 
   function setTab(page){
+    currentTab = page;
     document.querySelector('.tab.active')?.classList.remove('active');
     document.querySelector(`.tab[data-page="${page}"]`)?.classList.add('active');
     document.querySelector('.section.active')?.classList.remove('active');
@@ -112,10 +113,8 @@
     el.crumb.textContent = page[0].toUpperCase()+page.slice(1);
   }
 
-  // Tab clicks
   el.tabs.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.page)));
 
-  // Lua messages
   window.addEventListener('message', (ev)=>{
     const d = ev.data || {};
     if (d.action === 'players' && d.payload?.players) {
@@ -127,6 +126,8 @@
     if (d.action === 'nav' && d.payload){
       if (d.payload.type === 'up' && selected > 0){ selected--; renderPlayers(); }
       if (d.payload.type === 'down' && selected < players.length-1){ selected++; renderPlayers(); }
+      if (d.payload.type === 'left'){ if(currentTab==="home")setTab("safe"); else if(currentTab==="safe")setTab("vehicle"); else if(currentTab==="vehicle")setTab("risky"); else setTab("home"); }
+      if (d.payload.type === 'right'){ if(currentTab==="home")setTab("risky"); else if(currentTab==="risky")setTab("vehicle"); else if(currentTab==="vehicle")setTab("safe"); else setTab("home"); }
       if (d.payload.type === 'enter'){ console.log("Selected player:", players[selected]); }
     }
   });
