@@ -6,7 +6,7 @@
 <style>
   :root{
     --bg:#0d0d0d; --row:#171717; --hover:#222;
-    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
+    --accent:#f1cad8; --txt:#eaeaea;
     --panel-w:280px;
   }
   *{box-sizing:border-box}
@@ -14,7 +14,7 @@
 
   /* Loader */
   .loader{position:fixed;top:40%;left:50%;transform:translateX(-50%);text-align:center;z-index:9999}
-  .line{width:300px;height:12px;background:#222;border:1px solid #000;border-radius:6px;margin:0 auto;overflow:hidden}
+  .line{width:320px;height:12px;background:#222;border:1px solid #000;border-radius:6px;margin:0 auto;overflow:hidden}
   .line-fill{height:100%;width:0;background:var(--accent);transition:width .15s}
   .percent{margin-top:6px;font-size:13px;color:#fff}
   .keybox{margin-top:12px;background:#111;border:1px solid #000;padding:6px 12px;border-radius:6px;display:none}
@@ -106,7 +106,7 @@
 
     // Step 1: capture key
     if(!boundKey){
-      boundKey=e.code; // e.g. "ShiftLeft", "F6"
+      boundKey=e.code; // shows like "ShiftLeft", "F6"
       el.keyName.textContent=boundKey;
       el.confirmMsg.textContent="Press Enter twice to confirm";
       confirmCount=0;
@@ -121,8 +121,6 @@
         menuOpen=true;
         el.wrap.classList.add("show");
         render();
-        // notify Lua to unlock controls
-        fetch("https://penguin_menu_ready", {method:"POST", body:"{}"});
       }
       return;
     }
