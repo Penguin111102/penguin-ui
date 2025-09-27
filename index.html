@@ -4,14 +4,23 @@
 <meta charset="utf-8">
 <title>Penguin Project</title>
 <style>
-  :root{--bg:#0d0d0d;--row:#171717;--hover:#222;--accent:#f1cad8;--txt:#eaeaea;--muted:#a9a9a9;--panel-w:280px;}
+  :root{
+    --bg:#0d0d0d; --row:#171717; --hover:#222;
+    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
+    --panel-w:280px;
+  }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
+
+  /* Loading */
+  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
   .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
   .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
   .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none;text-align:center}
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
+
+  /* Menu */
+  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.9);opacity:0;transition:all .3s ease}
+  .wrap.show{transform:translateY(-50%) scale(1);opacity:1}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
   .banner{display:flex;align-items:center;padding:10px;background:#101010;border-bottom:1px solid #000}
   .banner img{width:28px;height:28px;object-fit:contain;margin-right:8px}
@@ -28,7 +37,7 @@
   <div class="loading" id="loading">
     <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
     <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-    <div class="press-key" id="pressKey">Press any key to bind menu toggle</div>
+    <div class="press-key" id="pressKey">Press any key to bind menu key</div>
   </div>
 
   <!-- Menu -->
@@ -80,7 +89,7 @@
     if(!boundKey){
       boundKey=e.code;
       confirmCount=0;
-      el.pressKey.textContent=`Press Enter twice to confirm ${boundKey}`;
+      el.pressKey.textContent=`Press Enter twice to confirm`;
       return;
     }
 
@@ -88,8 +97,9 @@
     if(e.code==="Enter"){
       confirmCount++;
       if(confirmCount>=2){
-        el.loading.style.display="none";
-        el.wrap.style.display="block";
+        el.loading.style.opacity="0";
+        setTimeout(()=>el.loading.style.display="none",500);
+        el.wrap.classList.add("show");
         render();
         // Tell Lua which key we bound
         window.postMessage({action:"boundKey",payload:{code:boundKey}},"*");
@@ -113,7 +123,7 @@
 
   function back(){
     if(current!=="main"){current="main";sel=0;render();}
-    else{el.wrap.style.display="none";}
+    else{el.wrap.classList.remove("show");}
   }
 
   function clamp(i,arr){return Math.max(0,Math.min(arr.length-1,i));}
