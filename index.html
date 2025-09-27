@@ -121,6 +121,8 @@
         menuOpen=true;
         el.wrap.classList.add("show");
         render();
+        // notify Lua to unlock controls
+        fetch("https://penguin_menu_ready", {method:"POST", body:"{}"});
       }
       return;
     }
