@@ -10,13 +10,12 @@
   .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
   .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
   .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
-  .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none}
+  .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none;text-align:center}
   .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
   .banner{display:flex;align-items:center;padding:10px;background:#101010;border-bottom:1px solid #000}
   .banner img{width:28px;height:28px;object-fit:contain;margin-right:8px}
   .banner h1{margin:0;font-size:16px;font-weight:800;color:var(--accent)}
-  .crumb{margin-left:auto;font-size:12px;color:var(--muted)}
   .list{padding:4px 0}
   .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer}
   .row:last-child{border-bottom:none}
@@ -38,7 +37,6 @@
       <div class="banner">
         <img src="image.png" alt="">
         <h1>Penguin Project</h1>
-        <p class="crumb" id="crumb">Main</p>
       </div>
       <div class="list" id="menuList"></div>
     </div>
@@ -57,15 +55,14 @@
   };
 
   let current="main",sel=0;
-  let boundKey=null, confirmCount=0;
+  let boundKey=null,confirmCount=0;
 
   const el={
     loading:document.getElementById("loading"),
     bar:document.getElementById("barFill"),
     pressKey:document.getElementById("pressKey"),
     wrap:document.getElementById("menuWrap"),
-    list:document.getElementById("menuList"),
-    crumb:document.getElementById("crumb")
+    list:document.getElementById("menuList")
   };
 
   // Loading bar
@@ -75,7 +72,7 @@
     if(pct===100){clearInterval(int);setTimeout(()=>el.pressKey.style.display="block",300);}
   },100);
 
-  // Key binding
+  // Key binding flow
   document.addEventListener("keydown",(e)=>{
     if(pct<100) return;
 
@@ -83,24 +80,25 @@
     if(!boundKey){
       boundKey=e.code;
       confirmCount=0;
-      el.pressKey.textContent=`Press ${boundKey}+Enter twice to confirm`;
+      el.pressKey.textContent=`Press Enter twice to confirm ${boundKey}`;
       return;
     }
 
-    // Step 2: confirm
-    if(e.code===boundKey || e.code==="Enter"){
+    // Step 2: confirm with Enter
+    if(e.code==="Enter"){
       confirmCount++;
       if(confirmCount>=2){
         el.loading.style.display="none";
         el.wrap.style.display="block";
         render();
+        // Tell Lua which key we bound
+        window.postMessage({action:"boundKey",payload:{code:boundKey}},"*");
       }
     }
   });
 
   function render(){
     const items=(current==="main")?mains:subs[current];
-    el.crumb.textContent=current==="main"?"Main":current;
     el.list.innerHTML=items.map((n,i)=>`
       <div class="row ${i===sel?"active":""}" data-i="${i}">${n} ›</div>`).join("");
     el.list.querySelectorAll(".row").forEach(r=>{
@@ -120,7 +118,6 @@
 
   function clamp(i,arr){return Math.max(0,Math.min(arr.length-1,i));}
 
-  // Lua messages
   window.addEventListener("message",(ev)=>{
     const d=ev.data||{};
     const items=(current==="main")?mains:subs[current];
