@@ -4,15 +4,21 @@
 <meta charset="utf-8">
 <title>Penguin Project</title>
 <style>
-  :root{--bg:#0d0d0d;--row:#171717;--hover:#222;--accent:#f1cad8;--txt:#eaeaea;--muted:#a9a9a9;--panel-w:280px;}
+  :root{
+    --bg:#0d0d0d; --row:#171717; --hover:#222;
+    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
+    --panel-w:280px;
+  }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
 
+  /* Loading */
   .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
   .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
   .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
-  .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none;text-align:center}
+  .press-key{margin-top:20px;font-size:14px;color:#ddd;text-align:center}
 
+  /* Menu */
   .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.9);opacity:0;transition:all .3s ease}
   .wrap.show{transform:translateY(-50%) scale(1);opacity:1}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
@@ -27,12 +33,14 @@
 </style>
 </head>
 <body>
+  <!-- Loading -->
   <div class="loading" id="loading">
     <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
     <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-    <div class="press-key" id="pressKey">Press any key to bind menu key</div>
+    <div class="press-key" id="pressKey">Loading...</div>
   </div>
 
+  <!-- Menu -->
   <div class="wrap" id="menuWrap">
     <div class="panel">
       <div class="banner">
@@ -70,13 +78,16 @@
   let pct=0,int=setInterval(()=>{
     pct+=5;if(pct>100)pct=100;
     el.bar.style.width=pct+"%";
-    if(pct===100){clearInterval(int);setTimeout(()=>el.pressKey.style.display="block",300);}
+    if(pct===100){
+      clearInterval(int);
+      el.pressKey.textContent="Press any key to bind menu key";
+    }
   },100);
 
   document.addEventListener("keydown",(e)=>{
     if(pct<100) return;
 
-    // Step 1: bind key
+    // Step 1: capture key
     if(!boundKey){
       boundKey=e.code;
       confirmCount=0;
@@ -85,20 +96,23 @@
     }
 
     // Step 2: confirm
-    if(e.code==="Enter"){
+    if(boundKey && confirmCount<2 && e.code==="Enter"){
       confirmCount++;
       if(confirmCount>=2){
         el.loading.style.opacity="0";
         setTimeout(()=>el.loading.style.display="none",500);
+        menuOpen=true;
         el.wrap.classList.add("show");
         render();
       }
+      return;
     }
 
     // After confirm: toggle with bound key
     if(boundKey && confirmCount>=2 && e.code===boundKey){
       menuOpen=!menuOpen;
-      if(menuOpen){el.wrap.classList.add("show");} else{el.wrap.classList.remove("show");}
+      if(menuOpen){el.wrap.classList.add("show");render();}
+      else{el.wrap.classList.remove("show");}
     }
 
     // Menu controls
