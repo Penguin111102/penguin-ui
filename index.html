@@ -5,135 +5,92 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Penguin Project</title>
 <style>
-  :root{
-    --panel-w: 320px; --panel-h: 520px;
-    --bg: #0b0b0b; --bg2:#141414; --txt:#eee;
-    --muted:#a0a0a0; --accent:#f1cad8; --accent2:#f1cad8;
-    --row:#1c1c1c; --row-hover:#2a2a2a; --border:#00000080;
+  :root {
+    --bg: #0d0d0d;
+    --row: #1a1a1a;
+    --hover: #2a2a2a;
+    --accent: #f1cad8; /* pastel pink highlight */
+    --txt: #eaeaea;
+    --muted: #aaa;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-  .wrap{position:fixed;top:50%;left:40px;transform:translateY(-50%)}
-  .panel{
-    width:var(--panel-w); height:var(--panel-h);
-    display:flex; flex-direction:column; overflow:hidden;
-    background:rgba(10,10,10,.95); border-radius:12px;
-    box-shadow:0 6px 18px rgba(0,0,0,.6);
-    border:1px solid #ffffff12;
+  * { box-sizing: border-box; }
+  html,body {
+    margin:0; height:100%; background:transparent;
+    font-family: Arial, Helvetica, sans-serif; color:var(--txt);
   }
-  .header{background:linear-gradient(90deg,var(--accent),var(--accent2)); padding:10px 12px; position:relative}
-  .brand{margin:0; font-size:18px; font-weight:700; color:#000}
-  .crumb{position:absolute; right:10px; bottom:8px; font-size:11px; color:#000; opacity:.8}
-  .tabs{display:flex; background:#1a1a1a}
-  .tab{flex:1; text-align:center; padding:8px 0; font-size:13px; color:#aaa; cursor:pointer; user-select:none; border-right:1px solid #0008; transition:background .15s}
-  .tab:last-child{border-right:none}
-  .tab.active{background:var(--accent); color:#000; font-weight:600}
-  .body{flex:1; background:var(--bg2); display:flex; flex-direction:column}
-  .section{display:none; height:100%}
-  .section.active{display:block}
-  .groupTitle{padding:10px 12px; font-size:12px; letter-spacing:.3px; color:var(--muted); background:#0003; border-bottom:1px solid #0008}
-  .toolbar{padding:8px 10px}
-  .select{width:100%; background:#0d0d0d; color:#ddd; border:1px solid #ffffff1f; border-radius:6px; padding:8px 10px; font-size:13px}
-  .list{height: calc(100% - 92px); overflow:auto; padding:6px 8px}
-  .row{display:flex; justify-content:space-between; align-items:center; background:var(--row); padding:8px 10px; border-radius:8px; margin:6px 0; border:1px solid var(--border); transition:.12s background}
-  .row:hover{background:var(--row-hover)}
-  .row.active{outline:2px solid var(--accent)}
-  .name{font-size:13px; color:#f4f4f4}
-  .dot{width:10px; height:10px; border-radius:50%; background:#888; box-shadow: inset 0 0 0 2px #0006}
-  .footer{display:flex; justify-content:space-between; align-items:center; padding:6px 10px; font-size:12px; background:#0d0d0d; color:#cfcfcf; border-top:1px solid #0008}
+  .wrap {
+    position:fixed; top:50%; left:40px; transform:translateY(-50%);
+  }
+  .panel {
+    width:260px; background:var(--bg);
+    border-radius:6px; overflow:hidden;
+    box-shadow:0 0 15px rgba(0,0,0,0.6);
+    border:1px solid #000;
+  }
+  .banner {
+    background:#111; padding:14px;
+    text-align:center; border-bottom:1px solid #000;
+  }
+  .banner h1 {
+    margin:0; font-size:18px; font-weight:700;
+    color:var(--accent); letter-spacing:0.5px;
+  }
+  .list { padding:6px 0; }
+  .row {
+    padding:10px 14px; font-size:14px;
+    cursor:pointer; user-select:none;
+    background:var(--row); border-bottom:1px solid #000;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .row:last-child { border-bottom:none; }
+  .row:hover { background:var(--hover); }
+  .row.active { background:var(--accent); color:#000; font-weight:600; }
+  .arrow { font-size:12px; color:var(--muted); }
+  .row.active .arrow { color:#000; }
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="panel" id="panel">
-      <div class="header">
-        <h1 class="brand">Penguin Project</h1>
-        <div class="crumb" id="crumb">Home</div>
-      </div>
-
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-page="home">PlayerList</div>
-        <div class="tab" data-page="safe">Safe</div>
-        <div class="tab" data-page="vehicle">Vehicle</div>
-        <div class="tab" data-page="risky">Risky</div>
-      </div>
-
-      <div class="body">
-        <section class="section active" id="page-home">
-          <div class="groupTitle">--- Select Player ---</div>
-          <div class="toolbar"><select class="select" id="playerSelect"><option>--- Select Player ---</option></select></div>
-          <div class="list" id="playerList"></div>
-        </section>
-        <section class="section" id="page-safe"><div class="groupTitle">Safe</div></section>
-        <section class="section" id="page-vehicle"><div class="groupTitle">Vehicle</div></section>
-        <section class="section" id="page-risky"><div class="groupTitle">Risky</div></section>
-      </div>
-
-      <div class="footer"><div>Beta 1.0 • Penguin Private</div><div id="pager">0/0</div></div>
+      <div class="banner"><h1>Penguin Project</h1></div>
+      <div class="list" id="menuList"></div>
     </div>
   </div>
 
 <script>
-  let players = []; let selected = 0; let currentTab = "home";
-  const el = {
-    tabs:  document.getElementById('tabs'),
-    crumb: document.getElementById('crumb'),
-    list:  document.getElementById('playerList'),
-    select:document.getElementById('playerSelect'),
-    pager: document.getElementById('pager'),
-    pages: {
-      home: document.getElementById('page-home'),
-      safe: document.getElementById('page-safe'),
-      vehicle: document.getElementById('page-vehicle'),
-      risky: document.getElementById('page-risky'),
-    }
-  };
+  let menuItems = [
+    "Player","Server","Weapon","Combat",
+    "Vehicle","Visual","Miscellaneous","Settings","Search"
+  ];
+  let selected = 0;
 
-  function renderPlayers() {
-    el.select.innerHTML = '<option>--- Select Player ---</option>' +
-      players.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} (${p.id})</option>`).join('');
-    el.list.innerHTML = players.map((p,i)=>(
-      `<div class="row ${i===selected?'active':''}" data-index="${i}">
-         <div class="name">${escapeHtml(p.name)} (${p.id})</div>
-         <div class="dot"></div>
+  const el = { list: document.getElementById('menuList') };
+
+  function renderMenu(){
+    el.list.innerHTML = menuItems.map((name,i)=>(
+      `<div class="row ${i===selected?'active':''}" data-i="${i}">
+         <span>${name}</span>
+         <span class="arrow">›</span>
        </div>`
     )).join('');
-    el.pager.textContent = `${players.length}/${players.length}`;
-    el.list.querySelectorAll('.row').forEach(row=>{
-      row.addEventListener('click',()=>{ selected = +row.dataset.index; renderPlayers(); });
+    el.list.querySelectorAll('.row').forEach(r=>{
+      r.addEventListener('click',()=>{
+        selected = +r.dataset.i; renderMenu();
+        console.log("Clicked:", menuItems[selected]);
+      });
     });
   }
 
-  function setTab(page){
-    currentTab = page;
-    document.querySelector('.tab.active')?.classList.remove('active');
-    document.querySelector(`.tab[data-page="${page}"]`)?.classList.add('active');
-    document.querySelector('.section.active')?.classList.remove('active');
-    el.pages[page].classList.add('active');
-    el.crumb.textContent = page[0].toUpperCase()+page.slice(1);
-  }
-
-  el.tabs.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.page)));
-
-  window.addEventListener('message', (ev)=>{
-    const d = ev.data || {};
-    if (d.action === 'players' && d.payload?.players) {
-      players = d.payload.players;
-      players.sort((a,b)=>a.name.localeCompare(b.name));
-      if (selected > players.length-1) selected = Math.max(0, players.length-1);
-      renderPlayers();
-    }
-    if (d.action === 'nav' && d.payload){
-      if (d.payload.type === 'up' && selected > 0){ selected--; renderPlayers(); }
-      if (d.payload.type === 'down' && selected < players.length-1){ selected++; renderPlayers(); }
-      if (d.payload.type === 'left'){ if(currentTab==="home")setTab("safe"); else if(currentTab==="safe")setTab("vehicle"); else if(currentTab==="vehicle")setTab("risky"); else setTab("home"); }
-      if (d.payload.type === 'right'){ if(currentTab==="home")setTab("risky"); else if(currentTab==="risky")setTab("vehicle"); else if(currentTab==="vehicle")setTab("safe"); else setTab("home"); }
-      if (d.payload.type === 'enter'){ console.log("Selected player:", players[selected]); }
+  window.addEventListener('message', ev=>{
+    const d = ev.data||{};
+    if(d.action==="nav" && d.payload){
+      if(d.payload.type==="up"   && selected>0){ selected--; renderMenu(); }
+      if(d.payload.type==="down" && selected<menuItems.length-1){ selected++; renderMenu(); }
+      if(d.payload.type==="enter"){ console.log("Selected:", menuItems[selected]); }
     }
   });
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-  renderPlayers();
+  renderMenu();
 </script>
 </body>
 </html>
