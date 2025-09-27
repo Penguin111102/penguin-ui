@@ -4,21 +4,15 @@
 <meta charset="utf-8">
 <title>Penguin Project</title>
 <style>
-  :root{
-    --bg:#0d0d0d; --row:#171717; --hover:#222;
-    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
-    --panel-w:280px;
-  }
+  :root{--bg:#0d0d0d;--row:#171717;--hover:#222;--accent:#f1cad8;--txt:#eaeaea;--muted:#a9a9a9;--panel-w:280px;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
 
-  /* Loading */
   .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;transition:opacity .5s}
   .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
   .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
   .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none;text-align:center}
 
-  /* Menu */
   .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.9);opacity:0;transition:all .3s ease}
   .wrap.show{transform:translateY(-50%) scale(1);opacity:1}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
@@ -33,14 +27,12 @@
 </style>
 </head>
 <body>
-  <!-- Loading -->
   <div class="loading" id="loading">
     <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
     <div class="bar"><div class="bar-fill" id="barFill"></div></div>
     <div class="press-key" id="pressKey">Press any key to bind menu key</div>
   </div>
 
-  <!-- Menu -->
   <div class="wrap" id="menuWrap">
     <div class="panel">
       <div class="banner">
@@ -64,7 +56,7 @@
   };
 
   let current="main",sel=0;
-  let boundKey=null,confirmCount=0;
+  let boundKey=null,confirmCount=0,menuOpen=false;
 
   const el={
     loading:document.getElementById("loading"),
@@ -81,11 +73,10 @@
     if(pct===100){clearInterval(int);setTimeout(()=>el.pressKey.style.display="block",300);}
   },100);
 
-  // Key binding flow
   document.addEventListener("keydown",(e)=>{
     if(pct<100) return;
 
-    // Step 1: capture key
+    // Step 1: bind key
     if(!boundKey){
       boundKey=e.code;
       confirmCount=0;
@@ -93,7 +84,7 @@
       return;
     }
 
-    // Step 2: confirm with Enter
+    // Step 2: confirm
     if(e.code==="Enter"){
       confirmCount++;
       if(confirmCount>=2){
@@ -101,9 +92,22 @@
         setTimeout(()=>el.loading.style.display="none",500);
         el.wrap.classList.add("show");
         render();
-        // Tell Lua which key we bound
-        window.postMessage({action:"boundKey",payload:{code:boundKey}},"*");
       }
+    }
+
+    // After confirm: toggle with bound key
+    if(boundKey && confirmCount>=2 && e.code===boundKey){
+      menuOpen=!menuOpen;
+      if(menuOpen){el.wrap.classList.add("show");} else{el.wrap.classList.remove("show");}
+    }
+
+    // Menu controls
+    if(menuOpen){
+      const items=(current==="main")?mains:subs[current];
+      if(e.code==="ArrowUp"){sel=Math.max(0,sel-1);render();}
+      if(e.code==="ArrowDown"){sel=Math.min(items.length-1,sel+1);render();}
+      if(e.code==="Enter"){open();}
+      if(e.code==="Escape"){back();}
     }
   });
 
@@ -111,9 +115,6 @@
     const items=(current==="main")?mains:subs[current];
     el.list.innerHTML=items.map((n,i)=>`
       <div class="row ${i===sel?"active":""}" data-i="${i}">${n} ›</div>`).join("");
-    el.list.querySelectorAll(".row").forEach(r=>{
-      r.addEventListener("click",()=>{sel=+r.dataset.i;open();});
-    });
   }
 
   function open(){
@@ -123,23 +124,8 @@
 
   function back(){
     if(current!=="main"){current="main";sel=0;render();}
-    else{el.wrap.classList.remove("show");}
+    else{menuOpen=false;el.wrap.classList.remove("show");}
   }
-
-  function clamp(i,arr){return Math.max(0,Math.min(arr.length-1,i));}
-
-  window.addEventListener("message",(ev)=>{
-    const d=ev.data||{};
-    const items=(current==="main")?mains:subs[current];
-    if(d.action==="nav"&&d.payload){
-      switch(d.payload.type){
-        case "up":sel=clamp(sel-1,items);render();break;
-        case "down":sel=clamp(sel+1,items);render();break;
-        case "enter":open();break;
-        case "back":back();break;
-      }
-    }
-  });
 </script>
 </body>
 </html>
