@@ -1,135 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
 <title>Penguin Project</title>
 <style>
-  :root{
-    --panel-w: 280px; --panel-h: 500px;
-    --bg:#0c0c0c; --row:#171717; --hover:#222;
-    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
+  :root {
+    --bg: #0d0d0d; --row: #171717; --hover: #222;
+    --accent: #f1cad8; --txt: #eaeaea; --muted: #a9a9a9;
+    --panel-w: 280px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
-  .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6);height:var(--panel-h);display:flex;flex-direction:column}
-  .banner{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#101010;border-bottom:1px solid #000}
-  .logo-img{width:28px;height:28px;object-fit:contain}
-  .logo-text{margin:0;font-size:17px;font-weight:800;color:var(--accent);letter-spacing:.4px}
-  .tabs{display:flex;background:#151515}
-  .tab{flex:1;text-align:center;padding:8px 0;font-size:13px;color:#aaa;cursor:pointer;user-select:none;border-right:1px solid #0008}
-  .tab:last-child{border-right:none}
-  .tab.active{background:var(--accent);color:#000;font-weight:600}
-  .body{flex:1;overflow-y:auto;background:#121212}
-  .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer}
-  .row:hover{background:var(--hover)}
-  /* Notifications bottom-right */
-  .noti-wrap{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:9999}
-  .noti{background:#111;border:1px solid #000;padding:8px 12px;font-size:13px;color:#eee;border-radius:6px;opacity:0;transform:translateX(120%);transition:all .3s ease}
-  .noti.show{opacity:1;transform:translateX(0)}
-  /* Loading screen */
-  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10000}
-  .bar{width:300px;height:20px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
+  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
+  .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
   .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
   .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none}
+  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
+  .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
+  .banner{display:flex;align-items:center;padding:10px;background:#101010;border-bottom:1px solid #000}
+  .banner img{width:28px;height:28px;object-fit:contain;margin-right:8px}
+  .banner h1{margin:0;font-size:16px;font-weight:800;color:var(--accent)}
+  .crumb{margin-left:auto;font-size:12px;color:var(--muted)}
+  .list{padding:4px 0}
+  .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer}
+  .row:last-child{border-bottom:none}
+  .row:hover{background:var(--hover)}
+  .row.active{background:var(--accent);color:#000;font-weight:700}
+  /* Notifications */
+  .noti-wrap{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:10000}
+  .noti{background:#111;border:1px solid #000;padding:8px 12px;font-size:13px;color:#eee;border-radius:6px;opacity:0;transform:translateX(120%);transition:all .3s ease}
+  .noti.show{opacity:1;transform:translateX(0)}
 </style>
 </head>
 <body>
-  <!-- Loading screen -->
+  <!-- Loading -->
   <div class="loading" id="loading">
     <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
     <div class="bar"><div class="bar-fill" id="barFill"></div></div>
     <div class="press-key" id="pressKey">Press any key to open</div>
   </div>
 
-  <!-- Main menu -->
+  <!-- Menu -->
   <div class="wrap" id="menuWrap">
     <div class="panel">
       <div class="banner">
-        <img class="logo-img" src="image.png" alt="">
-        <h1 class="logo-text">Penguin Project</h1>
+        <img src="image.png" alt="">
+        <h1>Penguin Project</h1>
+        <p class="crumb" id="crumb">Main</p>
       </div>
-      <div class="tabs" id="tabs"></div>
-      <div class="body" id="body"></div>
+      <div class="list" id="menuList"></div>
     </div>
   </div>
 
-  <!-- Notifications -->
   <div class="noti-wrap" id="notiWrap"></div>
 
 <script>
-  let tabs = ["Self","Weapon","Vehicle","World","Online","Misc","Settings"];
-  let currentTab = 0;
-
-  const el = {
-    loading: document.getElementById('loading'),
-    bar: document.getElementById('barFill'),
-    pressKey: document.getElementById('pressKey'),
-    wrap: document.getElementById('menuWrap'),
-    tabs: document.getElementById('tabs'),
-    body: document.getElementById('body'),
-    notiWrap: document.getElementById('notiWrap')
+  const mains = ["Self","Weapon","Vehicle","World","Online","Misc","Settings"];
+  const subs = {
+    "Self":["Health","Armor","NoClip","Godmode"],
+    "Weapon":["Give All","Infinite Ammo","No Recoil"],
+    "Vehicle":["Spawn Car","Repair","Boost"],
+    "World":["Weather","Time","Gravity"],
+    "Online":["Player List","Teleport to Player","Tase Player"],
+    "Misc":["ESP","Crosshair","NoClip Speed"],
+    "Settings":["Theme","Keybinds","Save Config"]
   };
 
-  // Loading animation
-  let pct=0;
-  let int=setInterval(()=>{
-    pct+=5; if(pct>100) pct=100;
+  let current = "main"; // "main" or name of submenu
+  let sel = 0;
+
+  const el = {
+    loading: document.getElementById("loading"),
+    bar: document.getElementById("barFill"),
+    pressKey: document.getElementById("pressKey"),
+    wrap: document.getElementById("menuWrap"),
+    list: document.getElementById("menuList"),
+    crumb: document.getElementById("crumb"),
+    notiWrap: document.getElementById("notiWrap")
+  };
+
+  // Loading
+  let pct=0,int=setInterval(()=>{
+    pct+=5; if(pct>100)pct=100;
     el.bar.style.width=pct+"%";
-    if(pct===100){
-      clearInterval(int);
-      setTimeout(()=>{ el.pressKey.style.display="block"; },300);
-    }
+    if(pct===100){clearInterval(int);setTimeout(()=>el.pressKey.style.display="block",300);}
   },100);
 
-  // Press any key to continue
-  document.addEventListener('keydown',()=>{
-    if(pct===100){
+  document.addEventListener("keydown",()=>{
+    if(pct===100 && el.loading.style.display!=="none"){
       el.loading.style.display="none";
       el.wrap.style.display="block";
+      render();
     }
   });
 
-  // Render tabs
-  function renderTabs(){
-    el.tabs.innerHTML = tabs.map((t,i)=>`<div class="tab ${i===currentTab?'active':''}" data-i="${i}">${t}</div>`).join('');
-    el.tabs.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-      currentTab=+t.dataset.i; renderTabs(); renderBody();
-    }));
+  function render(){
+    const items = (current==="main")? mains : subs[current];
+    el.crumb.textContent = current==="main"?"Main":current;
+    el.list.innerHTML = items.map((name,i)=>`
+      <div class="row ${i===sel?"active":""}" data-i="${i}">${name} ›</div>`).join("");
+    el.list.querySelectorAll(".row").forEach(r=>{
+      r.addEventListener("click",()=>{sel=+r.dataset.i;open();});
+    });
   }
 
-  // Render placeholder body
-  function renderBody(){
-    el.body.innerHTML="";
-    for(let i=1;i<=5;i++){
-      let div=document.createElement('div');
-      div.className="row";
-      div.textContent="Empty "+i;
-      el.body.appendChild(div);
+  function open(){
+    if(current==="main"){
+      const chosen=mains[sel];current=chosen;sel=0;render();
+    }else{
+      notify("Clicked: "+subs[current][sel]);
     }
   }
 
-  // Notifications
+  function back(){
+    if(current!=="main"){current="main";sel=0;render();}
+    else{el.wrap.style.display="none";}
+  }
+
+  function clamp(i,arr){return Math.max(0,Math.min(arr.length-1,i));}
+
   function notify(msg){
-    let n=document.createElement('div');
-    n.className="noti"; n.textContent=msg;
+    let n=document.createElement("div");
+    n.className="noti";n.textContent=msg;
     el.notiWrap.appendChild(n);
-    setTimeout(()=>n.classList.add('show'),10);
-    setTimeout(()=>{ n.classList.remove('show'); setTimeout(()=>n.remove(),300); },3000);
+    setTimeout(()=>n.classList.add("show"),10);
+    setTimeout(()=>{n.classList.remove("show");setTimeout(()=>n.remove(),300);},3000);
   }
 
   // Lua messages
-  window.addEventListener('message',(ev)=>{
+  window.addEventListener("message",(ev)=>{
     const d=ev.data||{};
-    if(d.action==="nav" && d.payload){
-      if(d.payload.type==="left"){ currentTab=(currentTab-1+tabs.length)%tabs.length; renderTabs(); renderBody(); }
-      if(d.payload.type==="right"){ currentTab=(currentTab+1)%tabs.length; renderTabs(); renderBody(); }
-      if(d.payload.type==="enter"){ notify("Selected tab: "+tabs[currentTab]); }
+    const items=(current==="main")?mains:subs[current];
+    if(d.action==="nav"&&d.payload){
+      switch(d.payload.type){
+        case "up": sel=clamp(sel-1,items);render();break;
+        case "down": sel=clamp(sel+1,items);render();break;
+        case "enter": open();break;
+        case "back": back();break;
+      }
     }
   });
-
-  renderTabs(); renderBody();
 </script>
 </body>
 </html>
