@@ -12,14 +12,6 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
 
-  /* Loader */
-  .loader{position:fixed;top:40%;left:50%;transform:translateX(-50%);text-align:center;z-index:9999}
-  .line{width:320px;height:12px;background:#222;border:1px solid #000;border-radius:6px;margin:0 auto;overflow:hidden}
-  .line-fill{height:100%;width:0;background:var(--accent);transition:width .15s}
-  .percent{margin-top:6px;font-size:13px;color:#fff}
-  .keybox{margin-top:12px;background:#111;border:1px solid #000;padding:6px 12px;border-radius:6px;display:none}
-  .keybox span{color:var(--accent);font-weight:700}
-
   /* Menu */
   .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.9);opacity:0;transition:all .3s ease}
   .wrap.show{transform:translateY(-50%) scale(1);opacity:1}
@@ -36,16 +28,6 @@
 </style>
 </head>
 <body>
-  <!-- Loader -->
-  <div class="loader" id="loader">
-    <div class="line"><div class="line-fill" id="lineFill"></div></div>
-    <div class="percent" id="percent">0%</div>
-    <div class="keybox" id="keybox">
-      Select your keybind (Open key): <span id="keyName">...</span>
-      <div id="confirmMsg" style="margin-top:6px;font-size:12px;color:#bbb"></div>
-    </div>
-  </div>
-
   <!-- Menu -->
   <div class="wrap" id="menuWrap">
     <div class="panel">
@@ -75,64 +57,17 @@
     "Search":[]
   };
 
-  let current="main",sel=0;
-  let boundKey=null,confirmCount=0,menuOpen=false;
+  let current="main",sel=0,menuOpen=false;
+  const el={wrap:document.getElementById("menuWrap"),list:document.getElementById("menuList")};
 
-  const el={
-    loader:document.getElementById("loader"),
-    fill:document.getElementById("lineFill"),
-    percent:document.getElementById("percent"),
-    keybox:document.getElementById("keybox"),
-    keyName:document.getElementById("keyName"),
-    confirmMsg:document.getElementById("confirmMsg"),
-    wrap:document.getElementById("menuWrap"),
-    list:document.getElementById("menuList")
-  };
-
-  // Fake loader
-  let pct=0;
-  let int=setInterval(()=>{
-    pct+=2;if(pct>100)pct=100;
-    el.fill.style.width=pct+"%";
-    el.percent.textContent=pct+"%";
-    if(pct===100){
-      clearInterval(int);
-      el.keybox.style.display="block";
-    }
-  },80);
-
+  // Toggle with CapsLock
   document.addEventListener("keydown",(e)=>{
-    if(pct<100) return;
-
-    // Step 1: capture key
-    if(!boundKey){
-      boundKey=e.code; // shows like "ShiftLeft", "F6"
-      el.keyName.textContent=boundKey;
-      el.confirmMsg.textContent="Press Enter twice to confirm";
-      confirmCount=0;
-      return;
-    }
-
-    // Step 2: confirm with Enter
-    if(boundKey && confirmCount<2 && e.code==="Enter"){
-      confirmCount++;
-      if(confirmCount>=2){
-        el.loader.style.display="none";
-        menuOpen=true;
-        el.wrap.classList.add("show");
-        render();
-      }
-      return;
-    }
-
-    // After confirm: toggle with bound key
-    if(boundKey && confirmCount>=2 && e.code===boundKey){
+    if(e.code==="CapsLock"){
       menuOpen=!menuOpen;
       if(menuOpen){el.wrap.classList.add("show");render();}
       else{el.wrap.classList.remove("show");}
     }
 
-    // Menu controls
     if(menuOpen){
       const items=(current==="main")?mains:subs[current];
       if(e.code==="ArrowUp"){sel=Math.max(0,sel-1);render();}
