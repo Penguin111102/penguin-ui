@@ -106,7 +106,7 @@
 
     // Step 1: capture key
     if(!boundKey){
-      boundKey=e.code;
+      boundKey=e.code; // e.g. "ShiftLeft", "F6"
       el.keyName.textContent=boundKey;
       el.confirmMsg.textContent="Press Enter twice to confirm";
       confirmCount=0;
