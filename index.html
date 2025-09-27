@@ -6,36 +6,57 @@
 <title>Penguin Project</title>
 <style>
   :root{
-    --bg:#0d0d0d; --row:#1a1a1a; --hover:#232323;
+    --panel-w: 300px;
+    --bg:#0c0c0c; --row:#171717; --hover:#222;
     --accent:#f1cad8; /* pastel pink */
     --txt:#eaeaea; --muted:#a9a9a9;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
   .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%)}
-  .panel{width:260px;background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
-  .banner{position:relative;background:#101010;border-bottom:1px solid #000}
-  .banner::before{
-    content:""; position:absolute; inset:0;
-    background:radial-gradient(140px 60px at 30% 50%, rgba(241,202,216,.25), transparent 60%);
-    pointer-events:none;
+
+  .panel{
+    width:var(--panel-w);
+    background:var(--bg);
+    border:1px solid #000;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 0 16px rgba(0,0,0,.6);
   }
-  .logo{margin:0;padding:14px 14px 10px 14px;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:.4px}
-  .crumb{margin:0;padding:0 14px 12px 14px;font-size:12px;color:var(--muted)}
-  .list{padding:6px 0}
+
+  /* Banner with PNG */
+  .banner{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#101010;border-bottom:1px solid #000;position:relative}
+  .banner::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(160px 60px at 30% 50%, rgba(241,202,216,.22), transparent 60%);
+  }
+  .logo-img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(241,202,216,.28))}
+  .logo-text{margin:0;font-size:17px;font-weight:800;color:var(--accent);letter-spacing:.4px}
+  .crumb{margin:0 0 0 auto;font-size:12px;color:var(--muted)}
+
+  .list{padding:4px 0}
   .row{
     display:flex;justify-content:space-between;align-items:center;
-    padding:10px 14px;font-size:14px;background:var(--row);
-    border-bottom:1px solid #000;cursor:pointer;user-select:none;
-    transition:background .12s ease;
+    padding:8px 12px;               /* thinner rows */
+    font-size:13px;
+    background:var(--row);
+    border-bottom:1px solid #000;
+    cursor:pointer;user-select:none;
+    transition:background .12s ease, color .12s ease;
   }
   .row:last-child{border-bottom:none}
   .row:hover{background:var(--hover)}
-  .row.active{background:var(--accent);color:#000;font-weight:700}
+  .row.active{
+    background:var(--accent);
+    color:#000;
+    font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);
+  }
   .arrow{font-size:12px;color:var(--muted)}
   .row.active .arrow{color:#000}
+
   .toast{
-    position:absolute;left:14px;bottom:10px;background:#111;border:1px solid #000;
+    position:absolute;left:12px;bottom:10px;background:#111;border:1px solid #000;
     color:#ddd;font-size:12px;padding:6px 10px;border-radius:6px;opacity:0;
     transition:opacity .15s ease; pointer-events:none;
   }
@@ -46,26 +67,26 @@
   <div class="wrap">
     <div class="panel">
       <div class="banner">
-        <h1 class="logo">Penguin Project</h1>
+        <!-- Upload penguin.png to your repo root -->
+        <img class="logo-img" src="penguin.png" alt="">
+        <h1 class="logo-text">Penguin Project</h1>
         <p class="crumb" id="crumb">Main menu</p>
         <div class="toast" id="toast"></div>
       </div>
+
       <div class="list" id="menuList"></div>
     </div>
   </div>
 
 <script>
-  // --- Menu model (Phaze-like main list)
-  let items = [
-    "Player","Server","Weapon","Combat",
-    "Vehicle","Visual","Miscellaneous","Settings","Search"
-  ];
+  // Phaze-like main list
+  let items = ["Player","Server","Weapon","Combat","Vehicle","Visual","Miscellaneous","Settings","Search"];
   let sel = 0;
 
   const el = {
     list:  document.getElementById('menuList'),
     crumb: document.getElementById('crumb'),
-    toast: document.getElementById('toast')
+    toast: document.getElementById('toast'),
   };
 
   function render(){
@@ -74,39 +95,51 @@
         <span>${name}</span><span class="arrow">›</span>
       </div>`).join('');
     el.list.querySelectorAll('.row').forEach(r=>{
-      r.addEventListener('click',()=>{ sel = +r.dataset.i; render(); openCurrent(); });
+      r.addEventListener('click',()=>{
+        sel = +r.dataset.i; render(); openCurrent();
+      });
     });
   }
 
-  function clamp(i){ if(i<0) return 0; if(i>items.length-1) return items.length-1; return i; }
+  function clamp(i){ return Math.max(0, Math.min(items.length-1, i)); }
 
   function openCurrent(){
     const name = items[sel];
     el.crumb.textContent = name;
     flash(`Opened: ${name}`);
-    // TODO: if you want, switch to a subpage here by replacing .list innerHTML
+    // TODO: swap to a subpage here if you want
   }
 
   function flash(text){
     el.toast.textContent = text;
     el.toast.classList.add('show');
-    clearTimeout(flash._t); flash._t = setTimeout(()=>el.toast.classList.remove('show'), 900);
+    clearTimeout(flash._t);
+    flash._t = setTimeout(()=>el.toast.classList.remove('show'), 950);
   }
 
-  // --- Lua → JS messages
+  // Browser testing: allow arrows/enter locally too
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'ArrowUp')   { sel = clamp(sel-1); render(); }
+    if (e.key === 'ArrowDown') { sel = clamp(sel+1); render(); }
+    if (e.key === 'ArrowLeft') { sel = clamp(sel-1); render(); }
+    if (e.key === 'ArrowRight'){ sel = clamp(sel+1); render(); }
+    if (e.key === 'Enter')     { openCurrent(); }
+  });
+
+  // Lua -> JS messages
   window.addEventListener('message', (ev)=>{
     const d = ev.data || {};
-    if(d.action === 'nav' && d.payload){
+    if (d.action === 'nav' && d.payload) {
       switch(d.payload.type){
         case 'up':   sel = clamp(sel-1); render(); break;
         case 'down': sel = clamp(sel+1); render(); break;
-        case 'left': sel = clamp(sel-1); render(); break;  // left = previous
-        case 'right':sel = clamp(sel+1); render(); break;  // right = next
-        case 'enter':openCurrent(); break;
+        case 'left': sel = clamp(sel-1); render(); break;  // previous
+        case 'right':sel = clamp(sel+1); render(); break;  // next
+        case 'enter':openCurrent(); break;                 // visible action
       }
     }
-    if(d.action === 'title' && d.payload?.text){
-      document.querySelector('.logo').textContent = d.payload.text;
+    if (d.action === 'title' && d.payload?.text) {
+      document.querySelector('.logo-text').textContent = d.payload.text;
     }
   });
 
