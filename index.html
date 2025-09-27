@@ -1,19 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <style>
-    body { margin:0; background:#222; color:white; font-family:Arial; }
-    h1 { text-align:center; padding:20px; background:#b51212; margin:0; }
-    button { display:block; margin:20px auto; padding:10px 20px; border:none;
-             background:#ff5c5c; color:#fff; border-radius:6px; cursor:pointer; }
-    button:hover { background:#b51212; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Penguin Project</title>
+<style>
+  :root{
+    --panel-w: 320px; --panel-h: 520px;
+    --bg: #0f0f0f; --bg2:#1a1a1a; --txt:#eeeeee;
+    --muted:#bdbdbd; --accent:#b51212; --accent2:#ff5c5c;
+    --row:#ffffff14; --row-hover:#ffffff26;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0000;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
+  /* container so it looks like a left-side overlay in screenshots */
+  .wrap{padding:20px}
+  .panel{
+    width:var(--panel-w); height:var(--panel-h);
+    display:flex; flex-direction:column; overflow:hidden;
+    background:rgba(15,15,15,.92); border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,.6);
+    border:1px solid #ffffff12;
+  }
+  /* header */
+  .header{
+    background: linear-gradient(90deg,var(--accent),var(--accent2));
+    padding:10px 12px; position:relative;
+  }
+  .brand{margin:0; font-size:18px; font-weight:700; letter-spacing:.4px}
+  .sub{position:absolute; right:10px; bottom:8px; font-size:11px; color:#fff; opacity:.8}
+  /* nav tabs */
+  .tabs{display:flex; background:#222}
+  .tab{
+    flex:1; text-align:center; padding:8px 0; font-size:13px; cursor:pointer;
+    color:#ccc; user-select:none; transition:.15s background,.15s color;
+    border-right:1px solid #0008;
+  }
+  .tab:last-child{border-right:none}
+  .tab.active{background:var(--accent); color:#fff}
+  /* body */
+  .body{flex:1; background:var(--bg2); display:flex; flex-direction:column}
+  .groupTitle{
+    padding:10px 12px; font-size:12px; letter-spacing:.4px; color:var(--muted);
+    background:#0000003d; border-bottom:1px solid #0007;
+  }
+  .toolbar{display:flex; gap:8px; padding:8px 10px; align-items:center}
+  .select{
+    appearance:none; width:100%; background:#151515; color:#ddd;
+    border:1px solid #ffffff1e; border-radius:6px; padding:8px 10px; font-size:13px;
+  }
+  .list{flex:1; overflow:auto; padding:6px 8px}
+  .row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--row); padding:8px 10px; border-radius:8px;
+    margin:6px 0; transition:.12s background;
+  }
+  .row:hover{background:var(--row-hover)}
+  .name{font-size:13px; color:#f4f4f4}
+  .pills{display:flex; gap:10px; align-items:center}
+  .pill{
+    width:12px;height:12px;border-radius:50%; background:#fff; opacity:.9;
+    box-shadow: inset 0 0 0 2px #00000055;
+  }
+  .pill.red{background:#ff4d4d} .pill.green{background:#52ff7a} .pill.orange{background:#ffb84d}
+  /* footer */
+  .footer{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 10px; font-size:12px; background:#111; color:#cfcfcf;
+    border-top:1px solid #0008;
+  }
+  .page{opacity:.8}
+  .btn{
+    border:none; background:#ffffff14; color:#eee; padding:6px 10px; border-radius:6px; cursor:pointer;
+  }
+  .btn:hover{background:#ffffff29}
+  /* simple hide/show per tab */
+  .tabpage{display:none; height:100%}
+  .tabpage.active{display:block}
+</style>
 </head>
 <body>
-  <h1>Penguin Project</h1>
-  <button>Start</button>
-  <button>Settings</button>
-  <button>Exit</button>
+  <div class="wrap">
+    <div class="panel" id="panel">
+      <div class="header">
+        <h1 class="brand">Penguin Project</h1>
+        <div class="sub">Home</div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-page="home">PlayerList</div>
+        <div class="tab" data-page="safe">Safe</div>
+        <div class="tab" data-page="vehicle">Vehicle</div>
+        <div class="tab" data-page="risky">Risky</div>
+      </div>
+
+      <div class="body">
+        <!-- HOME -->
+        <div class="tabpage active" id="page-home">
+          <div class="groupTitle">--- Select Player ---</div>
+          <div class="toolbar">
+            <select class="select" id="playerSelect">
+              <option>--- Select Player ---</option>
+            </select>
+          </div>
+          <div class="list" id="playerList"></div>
+        </div>
+
+        <!-- SAFE -->
+        <div class="tabpage" id="page-safe">
+          <div class="groupTitle">Safe</div>
+          <div class="list">
+            <div class="row"><div class="name">Godmode</div><button class="btn" onclick="toggle('godmode')">Toggle</button></div>
+            <div class="row"><div class="name">Invisible</div><button class="btn" onclick="toggle('invis')">Toggle</button></div>
+          </div>
+        </div>
+
+        <!-- VEHICLE -->
+        <div class="tabpage" id="page-vehicle">
+          <div class="groupTitle">Vehicle</div>
+          <div class="list">
+            <div class="row"><div class="name">Repair</div><button class="btn" onclick="act('repair')">Run</button></div>
+            <div class="row"><div class="name">Flip</div><button class="btn" onclick="act('flip')">Run</button></div>
+          </div>
+        </div>
+
+        <!-- RISKY -->
+        <div class="tabpage" id="page-risky">
+          <div class="groupTitle">Risky</div>
+          <div class="list">
+            <div class="row"><div class="name">Explode All</div><button class="btn" onclick="act('boom')">Run</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>Beta 1.0 • Penguin Private</div>
+        <div class="page" id="pager">1/10</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // demo data
+  const demoPlayers = [
+    {name:"£££", id:10, status:"red"},
+    {name:"£", id:5, status:"green"},
+    {name:"+pissed on+", id:14, status:"orange"},
+    {name:"OFFWHITE", id:7, status:"red"},
+    {name:"kmiak", id:16, status:"green"},
+    {name:"jaycoe", id:2, status:"red"},
+    {name:"ncgon", id:21, status:"green"},
+    {name:"k1_act", id:25, status:"orange"},
+    {name:"zimble", id:6, status:"green"},
+    {name:"craer", id:24, status:"red"},
+  ];
+
+  // populate select + list
+  const select = document.getElementById('playerSelect');
+  const list   = document.getElementById('playerList');
+  function renderPlayers(data){
+    select.innerHTML = '<option>--- Select Player ---</option>' +
+      data.map(p=>`<option>${p.name} (${p.id})</option>`).join('');
+    list.innerHTML = data.map(p=>(
+      `<div class="row">
+         <div class="name">${p.name} (${p.id})</div>
+         <div class="pills">
+           <div class="pill ${p.status==='red'?'red':p.status==='green'?'green':'orange'}"></div>
+         </div>
+       </div>`
+    )).join('');
+    document.getElementById('pager').textContent = `1/${Math.max(1,Math.ceil(data.length/10))}`;
+  }
+  renderPlayers(demoPlayers);
+
+  // tabs
+  const tabs = document.querySelectorAll('.tab');
+  const pages = {
+    home: document.getElementById('page-home'),
+    safe: document.getElementById('page-safe'),
+    vehicle: document.getElementById('page-vehicle'),
+    risky: document.getElementById('page-risky')
+  };
+  tabs.forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelector('.tab.active')?.classList.remove('active');
+      t.classList.add('active');
+      document.querySelector('.tabpage.active')?.classList.remove('active');
+      pages[t.dataset.page].classList.add('active');
+      document.querySelector('.sub').textContent = t.textContent.trim();
+    });
+  });
+
+  // hooks for your loader (Macho)
+  function toggle(name){ postMessageToHost({type:'toggle', feature:name}); }
+  function act(name){ postMessageToHost({type:'action', action:name}); }
+  function postMessageToHost(payload){
+    // for DUI/NUI you might use parent.postMessage or fetch callbacks;
+    // keep as a stub so it won’t error in browser:
+    if (window.parent && window.parent!==window) {
+      window.parent.postMessage(payload, "*");
+    } else {
+      console.log("[PenguinUI]", payload);
+    }
+  }
+</script>
 </body>
 </html>
