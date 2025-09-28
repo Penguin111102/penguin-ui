@@ -24,7 +24,7 @@
   .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer;position:relative;z-index:1}
   .row:last-child{border-bottom:none}
   .row:hover{background:var(--hover)}
-  .highlight{position:absolute;left:0;width:100%;height:32px;background:var(--accent);z-index:0;transition:top .25s ease}
+  .highlight{position:absolute;left:0;width:100%;height:32px;background:var(--accent);z-index:0;transition:top .2s ease}
   .bottombar{background:#111;border-top:1px solid #000;padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;color:#aaa}
 </style>
 </head>
@@ -61,14 +61,14 @@
     "Search":[]
   };
 
-  let current="main",sel=0,menuOpen=false;
+  let current="main",sel=0,menuOpen=false,mainIndex=0;
   const el={
     wrap:document.getElementById("menuWrap"),
     list:document.getElementById("menuList"),
     highlight:document.getElementById("highlight")
   };
 
-  // Toggle with CapsLock
+  // Toggle menu with CapsLock
   document.addEventListener("keyup",(e)=>{
     if(e.code==="CapsLock"){
       menuOpen=!menuOpen;
@@ -77,20 +77,34 @@
     }
   });
 
+  // Navigation
   document.addEventListener("keydown",(e)=>{
     if(!menuOpen) return;
 
     const items=(current==="main")?mains:subs[current];
+
     if(e.code==="ArrowUp"){sel=Math.max(0,sel-1);render();}
     if(e.code==="ArrowDown"){sel=Math.min(items.length-1,sel+1);render();}
+    if(e.code==="ArrowRight" && current==="main"){ // cycle next tab
+      mainIndex=(mainIndex+1)%mains.length;sel=0;renderMain();
+    }
+    if(e.code==="ArrowLeft" && current==="main"){ // cycle prev tab
+      mainIndex=(mainIndex-1+mains.length)%mains.length;sel=0;renderMain();
+    }
     if(e.code==="Enter"){open();}
-    if(e.code==="Escape"){back();}
+    if(e.code==="Backspace"){back();}
   });
 
   function render(){
     const items=(current==="main")?mains:subs[current];
     el.list.innerHTML=items.map((n,i)=>`
       <div class="row" data-i="${i}">${n} ›</div>`).join("");
+    updateHighlight();
+  }
+
+  function renderMain(){
+    current="main";sel=0;
+    el.list.innerHTML=`<div class="row active">${mains[mainIndex]} ›</div>`;
     updateHighlight();
   }
 
@@ -108,6 +122,9 @@
     if(current!=="main"){current="main";sel=0;render();}
     else{menuOpen=false;el.wrap.classList.remove("show");}
   }
+
+  // initial render main
+  render();
 </script>
 </body>
 </html>
