@@ -13,13 +13,13 @@
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
 
   /* Menu */
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.9);opacity:0;transition:all .3s ease}
-  .wrap.show{transform:translateY(-50%) scale(1);opacity:1}
+  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.95);opacity:0;pointer-events:none;transition:all .25s ease}
+  .wrap.show{transform:translateY(-50%) scale(1);opacity:1;pointer-events:auto}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
   .banner{display:flex;align-items:center;padding:10px;background:#101010;border-bottom:1px solid #000}
   .banner img{width:28px;height:28px;object-fit:contain;margin-right:8px}
   .banner h1{margin:0;font-size:16px;font-weight:800;color:var(--accent)}
-  .list-container{overflow:hidden;position:relative;height:300px}
+  .list-container{overflow:hidden;position:relative;min-height:240px}
   .list{padding:0;margin:0;position:relative}
   .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer;position:relative;z-index:1}
   .row:last-child{border-bottom:none}
@@ -74,6 +74,7 @@
       menuOpen=!menuOpen;
       if(menuOpen){el.wrap.classList.add("show");render();}
       else{el.wrap.classList.remove("show");}
+      return; // stop here so it doesn't count as nav
     }
 
     if(!menuOpen) return;
@@ -88,7 +89,7 @@
   function render(){
     const items=(current==="main")?mains:subs[current];
     el.list.innerHTML=items.map((n,i)=>`
-      <div class="row" data-i="${i}">${n} ›</div>`).join("");
+      <div class="row ${i===sel?"active":""}" data-i="${i}">${n} ›</div>`).join("");
     updateHighlight();
   }
 
@@ -107,7 +108,7 @@
     else{menuOpen=false;el.wrap.classList.remove("show");}
   }
 
-  // initial render
+  // first render hidden
   render();
 </script>
 </body>
