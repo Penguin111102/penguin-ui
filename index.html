@@ -4,128 +4,68 @@
 <meta charset="utf-8" />
 <title>Penguin Project</title>
 <style>
-  :root {
-    --bg:#0d0d0d; --row:#1a1a1a; --hover:#2a2a2a;
-    --accent:#f1cad8; --txt:#eaeaea; --muted:#aaa;
-  }
-  * { box-sizing:border-box; }
-  html,body { margin:0; height:100%; background:transparent; font-family:Arial,Helvetica,sans-serif; color:var(--txt); }
-
-  .wrap { position:fixed; top:50%; left:40px; transform:translateY(-50%); }
-  .panel { width:300px; height:420px; background:var(--bg); border-radius:6px; overflow:hidden; box-shadow:0 0 15px rgba(0,0,0,.6); border:1px solid #000; display:flex; flex-direction:column; }
-
-  .banner img { width:100%; height:120px; object-fit:cover; display:block; }
-
-  .list-container { position:relative; flex:1; overflow:hidden; }
-  .list { margin:0; padding:0; list-style:none; position:relative; }
-  .row { height:32px; line-height:32px; padding:0 14px; font-size:14px; cursor:pointer; background:var(--row); border-bottom:1px solid #000; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1; }
-  .row:last-child { border-bottom:none; }
-  .row:hover { background:var(--hover); }
-  .row.active { background:var(--accent); color:#000; font-weight:600; }
-  .arrow { font-size:12px; color:var(--muted); }
-  .row.active .arrow { color:#000; }
-
-  .scrollbar { position:absolute; left:0; top:0; bottom:0; width:6px; background:#111; }
-  .scroll-thumb { width:100%; height:32px; background:var(--accent); position:absolute; left:0; top:0; transition:top .2s ease; }
-
-  .bottombar { background:#111; border-top:1px solid #000; padding:4px 8px; font-size:11px; display:flex; justify-content:space-between; color:var(--muted); }
-
-  .notif-container { position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:9999; }
-  .notif { background:rgba(0,0,0,0.8); color:var(--txt); padding:8px 12px; border-radius:4px; font-size:13px; min-width:180px; box-shadow:0 0 6px rgba(0,0,0,0.5); animation:fadein .3s; }
-  @keyframes fadein { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  :root { --bg:#0d0d0d; --row:#1a1a1a; --hover:#2a2a2a; --accent:#f1cad8; --txt:#eaeaea; }
+  html,body {margin:0;height:100%;background:transparent;font-family:Arial,sans-serif;color:var(--txt);}
+  .wrap{position:fixed;top:50%;left:40px;transform:translateY(-50%);}
+  .panel{width:300px;height:420px;background:var(--bg);border-radius:6px;overflow:hidden;box-shadow:0 0 15px rgba(0,0,0,.6);display:flex;flex-direction:column;}
+  .banner{height:120px;background:url('hello-kitty.png') center/cover;}
+  .list{flex:1;overflow:hidden;position:relative;}
+  .row{height:32px;line-height:32px;padding:0 14px;border-bottom:1px solid #000;display:flex;justify-content:space-between;align-items:center;}
+  .row.active{background:var(--accent);color:#000;font-weight:600;}
+  .highlight{position:absolute;left:0;width:100%;height:32px;background:var(--accent);z-index:0;transition:top .2s ease;}
+  .bottombar{background:#111;padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;}
+  .checkbox::after{content:"[ ]";}
+  .checkbox.active::after{content:"[x]";}
+  .slider{flex:1;margin-left:10px;height:4px;background:#444;position:relative;}
+  .slider-thumb{width:8px;height:8px;background:#fff;position:absolute;top:-2px;}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="panel">
-      <div class="banner"><img src="hello-kitty.png" alt="Penguin Banner"></div>
-      <div class="list-container">
-        <ul class="list" id="menuList"></ul>
-        <div class="scrollbar"><div class="scroll-thumb" id="scrollThumb"></div></div>
-      </div>
-      <div class="bottombar">
-        <span>credit: penguin</span>
-        <span>lala&lt;3</span>
-      </div>
+      <div class="banner"></div>
+      <div class="list" id="menuList"></div>
+      <div class="highlight" id="highlight"></div>
+      <div class="bottombar"><span>credit: penguin</span><span>lala&lt;3</span></div>
     </div>
   </div>
 
-  <div class="notif-container" id="notifContainer"></div>
-
 <script>
-  // Default structure: main menu tabs, each has submenu items
-  let menus = {
-    "main": [
-      {id:"player", label:"Player"},
-      {id:"server", label:"Server"},
-      {id:"weapon", label:"Weapon"},
-      {id:"combat", label:"Combat"},
-      {id:"vehicle", label:"Vehicle"},
-      {id:"visual", label:"Visual"},
-      {id:"misc", label:"Miscellaneous"},
-      {id:"settings", label:"Settings"},
-      {id:"search", label:"Search"}
-    ],
-    "player": [], // filled by Lua
-    "server": [{id:"restart",label:"Restart Server"}],
-    "weapon": [{id:"giveall",label:"Give All Weapons"}],
-    "combat": [{id:"aimbot",label:"Toggle Aimbot"}],
-    "vehicle": [{id:"spawncar",label:"Spawn Car"}],
-    "visual": [{id:"esp",label:"ESP"}],
-    "misc": [{id:"configs",label:"Configs"}],
-    "settings": [{id:"theme",label:"Change Theme"}],
-    "search": [{id:"find",label:"Find Option"}]
-  };
+  let menu=[], current="main", stack=[], selected=0;
+  const el={list:document.getElementById("menuList"),highlight:document.getElementById("highlight")};
 
-  let current="main", selected=0;
+  function render(items){
+    menu=items; el.list.innerHTML="";
+    items.forEach((item,i)=>{
+      const row=document.createElement("div");
+      row.className="row"+(i===selected?" active":"");
+      row.dataset.id=item.id; row.dataset.type=item.type;
+      let label=document.createElement("span"); label.textContent=item.label;
+      row.appendChild(label);
 
-  const el={list:document.getElementById('menuList'),thumb:document.getElementById('scrollThumb'),notif:document.getElementById('notifContainer')};
-
-  function renderMenu(){
-    let items = menus[current];
-    el.list.innerHTML = items.map((item,i)=>(
-      `<li class="row ${i===selected?'active':''}" data-id="${item.id}">
-         <span>${item.label}</span><span class="arrow">›</span>
-       </li>`
-    )).join('');
-    updateScroll();
+      if(item.type==="checkbox"){ row.classList.add("checkbox"); if(item.value) row.classList.add("active"); }
+      if(item.type==="slider"){ let s=document.createElement("div"); s.className="slider";
+        let thumb=document.createElement("div"); thumb.className="slider-thumb";
+        thumb.style.left=((item.value-item.min)/(item.max-item.min))*100+"%";
+        s.appendChild(thumb); row.appendChild(s);
+      }
+      el.list.appendChild(row);
+    });
+    updateHighlight();
   }
 
-  function updateScroll(){
-    let items=menus[current];
-    const rowHeight=32;
-    const total=items.length;
-    const pos=(selected/(total>1?total-1:1))*(300-32); // panel height minus thumb
-    el.thumb.style.top=pos+"px";
-  }
+  function updateHighlight(){ el.highlight.style.top=(selected*32)+"px"; }
 
-  function addNotification(msg){
-    const n=document.createElement("div"); n.className="notif"; n.innerText=msg;
-    el.notif.appendChild(n); setTimeout(()=>n.remove(),4000);
-  }
-
-  window.addEventListener('message', ev=>{
+  window.addEventListener("message",ev=>{
     const d=ev.data||{};
-    if(d.action==="players" && d.payload){
-      menus["player"]=d.payload.map(p=>({id:"ply_" + p.id,label:p.name+" ("+p.id+")"}));
-      if(current==="player") renderMenu();
-    }
+    if(d.action==="menu" && d.payload){ render(d.payload.items); }
     if(d.action==="nav" && d.payload){
-      let items=menus[current];
-      if(d.payload.type==="up"   && selected>0){ selected--; renderMenu(); }
-      if(d.payload.type==="down" && selected<items.length-1){ selected++; renderMenu(); }
-      if(d.payload.type==="enter"){
-        let item=items[selected];
-        if(menus[item.id]){ current=item.id; selected=0; renderMenu(); }
-        else { addNotification("Selected: "+item.label); }
-      }
-      if(d.payload.type==="back"){
-        if(current!=="main"){ current="main"; selected=0; renderMenu(); }
-      }
+      if(d.payload.type==="up" && selected>0){selected--;render(menu);}
+      if(d.payload.type==="down" && selected<menu.length-1){selected++;render(menu);}
+      if(d.payload.type==="enter"){ let item=menu[selected]; if(item.type==="category"){ stack.push({menu,selected}); render(item.children); selected=0; } else { parent.postMessage({action:item.type,id:item.id},"*"); } }
+      if(d.payload.type==="back"){ if(stack.length>0){ let st=stack.pop(); render(st.menu); selected=st.selected; } }
     }
   });
-
-  renderMenu();
 </script>
 </body>
 </html>
