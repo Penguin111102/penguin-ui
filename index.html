@@ -5,10 +5,10 @@
 <title>Penguin Project</title>
 <style>
   :root {
-    --bg: rgba(15,15,15,0.85); /* transparent background */
+    --bg: rgba(15,15,15,0.85);
     --row: rgba(30,30,30,0.85);
     --hover: rgba(40,40,40,0.9);
-    --accent: #f1cad8; /* pastel pink */
+    --accent: #f1cad8;
     --txt: #eaeaea;
     --muted: #aaa;
   }
@@ -27,8 +27,17 @@
   .row.active {background:var(--accent);color:#000;font-weight:600;}
   .arrow {font-size:12px;color:var(--muted);}
   .row.active .arrow{color:#000;}
-  .scrollbar{position:absolute;left:0;top:0;bottom:0;width:6px;background:rgba(255,255,255,0.05);}
-  .scroll-thumb{width:100%;height:36px;background:var(--accent);position:absolute;left:0;top:0;transition:top .2s;}
+
+  /* Checkbox look */
+  .checkbox::after {content:"[ ]"; margin-left:auto; color:var(--muted);}
+  .checkbox.checked::after {content:"[x]"; color:var(--accent);}
+  .row.active.checkbox.checked::after {color:#000;}
+
+  /* Slider look */
+  .slider {flex:1;margin-left:10px;height:6px;background:#333;border-radius:3px;position:relative;}
+  .slider-fill {height:100%;background:var(--accent);border-radius:3px;}
+  .slider-thumb {width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:-2px;}
+
   .bottombar{background:rgba(20,20,20,0.9);padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;
              border-top:1px solid rgba(255,255,255,0.1);}
   .statusbar{background:rgba(0,0,0,0.6);padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;color:#fff;}
@@ -40,7 +49,6 @@
       <div class="banner"></div>
       <div class="list-container">
         <ul class="list" id="menuList"></ul>
-        <div class="scrollbar"><div class="scroll-thumb" id="scrollThumb"></div></div>
       </div>
       <div class="bottombar"><span>credit: penguin</span><span>lala&lt;3</span></div>
       <div class="statusbar"><span id="statusLeft">ID: ???</span><span id="statusRight">0/0</span></div>
@@ -48,11 +56,12 @@
   </div>
 
 <script>
+  // Menu structure
   let menus = {
     "main": [
-      {id:"general", label:"General"},
-      {id:"weapons", label:"Weapons"},
-      {id:"visuals", label:"Visuals"}
+      {id:"general", label:"General", type:"category"},
+      {id:"weapons", label:"Weapons", type:"category"},
+      {id:"visuals", label:"Visuals", type:"category"}
     ],
     "general": [
       {id:"godmode", label:"Godmode", type:"checkbox", value:false},
@@ -70,25 +79,46 @@
 
   let current="main", selected=0, stack=[];
 
-  const el={list:document.getElementById("menuList"),thumb:document.getElementById("scrollThumb"),
-            statusLeft:document.getElementById("statusLeft"),statusRight:document.getElementById("statusRight")};
+  const el={list:document.getElementById("menuList"),statusRight:document.getElementById("statusRight")};
 
   function renderMenu(){
     let items=menus[current]; el.list.innerHTML="";
     items.forEach((item,i)=>{
       const row=document.createElement("li");
       row.className="row"+(i===selected?" active":"");
-      row.innerHTML=`<span>${item.label}</span><span class="arrow">›</span>`;
+      row.dataset.id=item.id; row.dataset.type=item.type;
+
+      // Label
+      const label=document.createElement("span");
+      label.textContent=item.label;
+      row.appendChild(label);
+
+      // Type-specific visuals
+      if(item.type==="category"){ 
+        row.innerHTML=`<span>${item.label}</span><span class="arrow">›</span>`;
+      }
+      if(item.type==="checkbox"){
+        row.classList.add("checkbox");
+        if(item.value) row.classList.add("checked");
+      }
+      if(item.type==="slider"){
+        const slider=document.createElement("div"); slider.className="slider";
+        const fill=document.createElement("div"); fill.className="slider-fill";
+        fill.style.width=((item.value-item.min)/(item.max-item.min))*100+"%";
+        const thumb=document.createElement("div"); thumb.className="slider-thumb";
+        thumb.style.left=fill.style.width;
+        slider.appendChild(fill); slider.appendChild(thumb); row.appendChild(slider);
+      }
+
       el.list.appendChild(row);
     });
-    updateScroll();
     el.statusRight.textContent=(selected+1)+"/"+items.length;
   }
 
-  function updateScroll(){
-    const total=menus[current].length;
-    const pos=(selected/(total>1?total-1:1))*(420-36); // panel height minus thumb
-    el.thumb.style.top=pos+"px";
+  function updateSlider(item,dir){
+    if(item.type!=="slider") return;
+    if(dir==="left" && item.value>item.min) item.value--;
+    if(dir==="right" && item.value<item.max) item.value++;
   }
 
   window.addEventListener("message",ev=>{
@@ -97,12 +127,21 @@
       let items=menus[current];
       if(d.payload.type==="up"   && selected>0){selected--;renderMenu();}
       if(d.payload.type==="down" && selected<items.length-1){selected++;renderMenu();}
-      if(d.payload.type==="enter"){ 
+      if(d.payload.type==="enter"){
         let item=items[selected];
-        if(menus[item.id]){ stack.push({menu:current,sel:selected}); current=item.id; selected=0; renderMenu();}
-        else { console.log("Selected:",item.id); }
+        if(item.type==="category"){ stack.push({menu:current,sel:selected}); current=item.id; selected=0; renderMenu();}
+        else if(item.type==="checkbox"){ item.value=!item.value; renderMenu(); parent.postMessage({action:"toggle",id:item.id,value:item.value},"*"); }
+        else if(item.type==="button"){ parent.postMessage({action:"button",id:item.id},"*"); }
       }
-      if(d.payload.type==="back"){ if(stack.length>0){ let st=stack.pop(); current=st.menu; selected=st.sel; renderMenu(); } }
+      if(d.payload.type==="left"||d.payload.type==="right"){
+        let item=items[selected];
+        updateSlider(item,d.payload.type);
+        renderMenu();
+        parent.postMessage({action:"slider",id:item.id,value:item.value},"*");
+      }
+      if(d.payload.type==="back"){
+        if(stack.length>0){ let st=stack.pop(); current=st.menu; selected=st.sel; renderMenu(); }
+      }
     }
   });
 
