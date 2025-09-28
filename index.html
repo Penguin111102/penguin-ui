@@ -12,13 +12,13 @@
   html,body { margin:0; height:100%; background:transparent; font-family:Arial,Helvetica,sans-serif; color:var(--txt); }
 
   .wrap { position:fixed; top:50%; left:40px; transform:translateY(-50%); }
-  .panel { width:280px; background:var(--bg); border-radius:6px; overflow:hidden; box-shadow:0 0 15px rgba(0,0,0,.6); border:1px solid #000; display:flex; flex-direction:column; }
+  .panel { width:300px; height:420px; background:var(--bg); border-radius:6px; overflow:hidden; box-shadow:0 0 15px rgba(0,0,0,.6); border:1px solid #000; display:flex; flex-direction:column; }
 
-  .banner img { width:100%; display:block; height:120px; object-fit:cover; }
+  .banner img { width:100%; height:120px; object-fit:cover; display:block; }
 
   .list-container { position:relative; flex:1; overflow:hidden; }
   .list { margin:0; padding:0; list-style:none; position:relative; }
-  .row { padding:9px 14px; font-size:14px; cursor:pointer; user-select:none; background:var(--row); border-bottom:1px solid #000; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1; }
+  .row { height:32px; line-height:32px; padding:0 14px; font-size:14px; cursor:pointer; background:var(--row); border-bottom:1px solid #000; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1; }
   .row:last-child { border-bottom:none; }
   .row:hover { background:var(--hover); }
   .row.active { background:var(--accent); color:#000; font-weight:600; }
@@ -26,7 +26,7 @@
   .row.active .arrow { color:#000; }
 
   .scrollbar { position:absolute; left:0; top:0; bottom:0; width:6px; background:#111; }
-  .scroll-thumb { width:100%; height:32px; background:var(--accent); transition:top .2s ease; position:absolute; left:0; top:0; }
+  .scroll-thumb { width:100%; height:32px; background:var(--accent); position:absolute; left:0; top:0; transition:top .2s ease; }
 
   .bottombar { background:#111; border-top:1px solid #000; padding:4px 8px; font-size:11px; display:flex; justify-content:space-between; color:var(--muted); }
 
@@ -53,17 +53,37 @@
   <div class="notif-container" id="notifContainer"></div>
 
 <script>
-  let menuItems = [];   // will be filled from Lua
-  let selected = 0;
-
-  const el = {
-    list: document.getElementById('menuList'),
-    thumb: document.getElementById('scrollThumb'),
-    notif: document.getElementById('notifContainer')
+  // Default structure: main menu tabs, each has submenu items
+  let menus = {
+    "main": [
+      {id:"player", label:"Player"},
+      {id:"server", label:"Server"},
+      {id:"weapon", label:"Weapon"},
+      {id:"combat", label:"Combat"},
+      {id:"vehicle", label:"Vehicle"},
+      {id:"visual", label:"Visual"},
+      {id:"misc", label:"Miscellaneous"},
+      {id:"settings", label:"Settings"},
+      {id:"search", label:"Search"}
+    ],
+    "player": [], // filled by Lua
+    "server": [{id:"restart",label:"Restart Server"}],
+    "weapon": [{id:"giveall",label:"Give All Weapons"}],
+    "combat": [{id:"aimbot",label:"Toggle Aimbot"}],
+    "vehicle": [{id:"spawncar",label:"Spawn Car"}],
+    "visual": [{id:"esp",label:"ESP"}],
+    "misc": [{id:"configs",label:"Configs"}],
+    "settings": [{id:"theme",label:"Change Theme"}],
+    "search": [{id:"find",label:"Find Option"}]
   };
 
+  let current="main", selected=0;
+
+  const el={list:document.getElementById('menuList'),thumb:document.getElementById('scrollThumb'),notif:document.getElementById('notifContainer')};
+
   function renderMenu(){
-    el.list.innerHTML = menuItems.map((item,i)=>(
+    let items = menus[current];
+    el.list.innerHTML = items.map((item,i)=>(
       `<li class="row ${i===selected?'active':''}" data-id="${item.id}">
          <span>${item.label}</span><span class="arrow">›</span>
        </li>`
@@ -72,31 +92,36 @@
   }
 
   function updateScroll(){
+    let items=menus[current];
     const rowHeight=32;
-    el.thumb.style.top = (selected*rowHeight)+"px";
+    const total=items.length;
+    const pos=(selected/(total>1?total-1:1))*(300-32); // panel height minus thumb
+    el.thumb.style.top=pos+"px";
   }
 
   function addNotification(msg){
-    const n=document.createElement("div");
-    n.className="notif"; n.innerText=msg;
-    el.notif.appendChild(n);
-    setTimeout(()=>n.remove(),4000);
+    const n=document.createElement("div"); n.className="notif"; n.innerText=msg;
+    el.notif.appendChild(n); setTimeout(()=>n.remove(),4000);
   }
 
   window.addEventListener('message', ev=>{
     const d=ev.data||{};
-    if(d.action==="menu" && d.payload){ 
-      menuItems = d.payload; selected=0; renderMenu();
+    if(d.action==="players" && d.payload){
+      menus["player"]=d.payload.map(p=>({id:"ply_" + p.id,label:p.name+" ("+p.id+")"}));
+      if(current==="player") renderMenu();
     }
     if(d.action==="nav" && d.payload){
+      let items=menus[current];
       if(d.payload.type==="up"   && selected>0){ selected--; renderMenu(); }
-      if(d.payload.type==="down" && selected<menuItems.length-1){ selected++; renderMenu(); }
-      if(d.payload.type==="enter"){ 
-        const item = menuItems[selected];
-        addNotification("Selected: "+item.label);
-        window.parent.postMessage({action:"select",payload:item},"*");
+      if(d.payload.type==="down" && selected<items.length-1){ selected++; renderMenu(); }
+      if(d.payload.type==="enter"){
+        let item=items[selected];
+        if(menus[item.id]){ current=item.id; selected=0; renderMenu(); }
+        else { addNotification("Selected: "+item.label); }
       }
-      if(d.payload.type==="back"){ addNotification("Back"); }
+      if(d.payload.type==="back"){
+        if(current!=="main"){ current="main"; selected=0; renderMenu(); }
+      }
     }
   });
 
