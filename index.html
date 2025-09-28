@@ -68,13 +68,14 @@
     highlight:document.getElementById("highlight")
   };
 
-  // Toggle menu with F6
+  // Toggle menu with F6 (catch all forms)
   document.addEventListener("keydown",(e)=>{
-    if(e.code==="F6"){
+    if(e.code==="F6" || e.key==="F6" || e.which===117){
       menuOpen=!menuOpen;
+      console.log("F6 pressed, menuOpen=",menuOpen); // debug
       if(menuOpen){el.wrap.classList.add("show");render();}
       else{el.wrap.classList.remove("show");}
-      return; // stop here so it doesn't count as nav
+      return;
     }
 
     if(!menuOpen) return;
@@ -108,7 +109,7 @@
     else{menuOpen=false;el.wrap.classList.remove("show");}
   }
 
-  // first render hidden
+  // Initial render
   render();
 </script>
 </body>
