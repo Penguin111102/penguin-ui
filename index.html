@@ -61,36 +61,26 @@
     "Search":[]
   };
 
-  let current="main",sel=0,menuOpen=false,mainIndex=0;
+  let current="main",sel=0,menuOpen=false;
   const el={
     wrap:document.getElementById("menuWrap"),
     list:document.getElementById("menuList"),
     highlight:document.getElementById("highlight")
   };
 
-  // Toggle menu with CapsLock
-  document.addEventListener("keyup",(e)=>{
-    if(e.code==="CapsLock"){
+  // Toggle menu with F6
+  document.addEventListener("keydown",(e)=>{
+    if(e.code==="F6"){
       menuOpen=!menuOpen;
       if(menuOpen){el.wrap.classList.add("show");render();}
       else{el.wrap.classList.remove("show");}
     }
-  });
 
-  // Navigation
-  document.addEventListener("keydown",(e)=>{
     if(!menuOpen) return;
 
     const items=(current==="main")?mains:subs[current];
-
     if(e.code==="ArrowUp"){sel=Math.max(0,sel-1);render();}
     if(e.code==="ArrowDown"){sel=Math.min(items.length-1,sel+1);render();}
-    if(e.code==="ArrowRight" && current==="main"){ // cycle next tab
-      mainIndex=(mainIndex+1)%mains.length;sel=0;renderMain();
-    }
-    if(e.code==="ArrowLeft" && current==="main"){ // cycle prev tab
-      mainIndex=(mainIndex-1+mains.length)%mains.length;sel=0;renderMain();
-    }
     if(e.code==="Enter"){open();}
     if(e.code==="Backspace"){back();}
   });
@@ -102,14 +92,8 @@
     updateHighlight();
   }
 
-  function renderMain(){
-    current="main";sel=0;
-    el.list.innerHTML=`<div class="row active">${mains[mainIndex]} ›</div>`;
-    updateHighlight();
-  }
-
   function updateHighlight(){
-    const rowHeight=32; // match .highlight height
+    const rowHeight=32;
     el.highlight.style.top=(sel*rowHeight)+"px";
   }
 
@@ -123,7 +107,7 @@
     else{menuOpen=false;el.wrap.classList.remove("show");}
   }
 
-  // initial render main
+  // initial render
   render();
 </script>
 </body>
