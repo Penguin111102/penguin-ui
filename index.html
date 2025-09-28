@@ -6,130 +6,144 @@
 <title>Penguin Project</title>
 <style>
   :root{
-    --panel-w: 280px; --panel-h: 500px;
+    --panel-w: 300px;
     --bg:#0c0c0c; --row:#171717; --hover:#222;
-    --accent:#f1cad8; --txt:#eaeaea; --muted:#a9a9a9;
+    --accent:#f1cad8; /* pastel pink */
+    --txt:#eaeaea; --muted:#a9a9a9;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
-  .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6);height:var(--panel-h);display:flex;flex-direction:column}
-  .banner{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#101010;border-bottom:1px solid #000}
-  .logo-img{width:28px;height:28px;object-fit:contain}
+  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%)}
+
+  .panel{
+    width:var(--panel-w);
+    background:var(--bg);
+    border:1px solid #000;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 0 16px rgba(0,0,0,.6);
+  }
+
+  /* Banner with PNG */
+  .banner{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#101010;border-bottom:1px solid #000;position:relative}
+  .banner::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(160px 60px at 30% 50%, rgba(241,202,216,.22), transparent 60%);
+  }
+  .logo-img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(241,202,216,.28))}
   .logo-text{margin:0;font-size:17px;font-weight:800;color:var(--accent);letter-spacing:.4px}
-  .tabs{display:flex;background:#151515}
-  .tab{flex:1;text-align:center;padding:8px 0;font-size:13px;color:#aaa;cursor:pointer;user-select:none;border-right:1px solid #0008}
-  .tab:last-child{border-right:none}
-  .tab.active{background:var(--accent);color:#000;font-weight:600}
-  .body{flex:1;overflow-y:auto;background:#121212}
-  .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer}
+  .crumb{margin:0 0 0 auto;font-size:12px;color:var(--muted)}
+
+  .list{padding:4px 0}
+  .row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 12px;               /* thinner rows */
+    font-size:13px;
+    background:var(--row);
+    border-bottom:1px solid #000;
+    cursor:pointer;user-select:none;
+    transition:background .12s ease, color .12s ease;
+  }
+  .row:last-child{border-bottom:none}
   .row:hover{background:var(--hover)}
-  /* Notifications bottom-right */
-  .noti-wrap{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:9999}
-  .noti{background:#111;border:1px solid #000;padding:8px 12px;font-size:13px;color:#eee;border-radius:6px;opacity:0;transform:translateX(120%);transition:all .3s ease}
-  .noti.show{opacity:1;transform:translateX(0)}
-  /* Loading screen */
-  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10000}
-  .bar{width:300px;height:20px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
-  .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
-  .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none}
+  .row.active{
+    background:var(--accent);
+    color:#000;
+    font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);
+  }
+  .arrow{font-size:12px;color:var(--muted)}
+  .row.active .arrow{color:#000}
+
+  .toast{
+    position:absolute;left:12px;bottom:10px;background:#111;border:1px solid #000;
+    color:#ddd;font-size:12px;padding:6px 10px;border-radius:6px;opacity:0;
+    transition:opacity .15s ease; pointer-events:none;
+  }
+  .toast.show{opacity:1}
 </style>
 </head>
 <body>
-  <!-- Loading screen -->
-  <div class="loading" id="loading">
-    <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
-    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-    <div class="press-key" id="pressKey">Press any key to open</div>
-  </div>
-
-  <!-- Main menu -->
-  <div class="wrap" id="menuWrap">
+  <div class="wrap">
     <div class="panel">
       <div class="banner">
-        <img class="logo-img" src="image.png" alt="">
+        <!-- Upload penguin.png to your repo root -->
+        <img class="logo-img" src="penguin.png" alt="">
         <h1 class="logo-text">Penguin Project</h1>
+        <p class="crumb" id="crumb">Main menu</p>
+        <div class="toast" id="toast"></div>
       </div>
-      <div class="tabs" id="tabs"></div>
-      <div class="body" id="body"></div>
+
+      <div class="list" id="menuList"></div>
     </div>
   </div>
 
-  <!-- Notifications -->
-  <div class="noti-wrap" id="notiWrap"></div>
-
 <script>
-  let tabs = ["Self","Weapon","Vehicle","World","Online","Misc","Settings"];
-  let currentTab = 0;
+  // Phaze-like main list
+  let items = ["Player","Server","Weapon","Combat","Vehicle","Visual","Miscellaneous","Settings","Search"];
+  let sel = 0;
 
   const el = {
-    loading: document.getElementById('loading'),
-    bar: document.getElementById('barFill'),
-    pressKey: document.getElementById('pressKey'),
-    wrap: document.getElementById('menuWrap'),
-    tabs: document.getElementById('tabs'),
-    body: document.getElementById('body'),
-    notiWrap: document.getElementById('notiWrap')
+    list:  document.getElementById('menuList'),
+    crumb: document.getElementById('crumb'),
+    toast: document.getElementById('toast'),
   };
 
-  // Loading animation
-  let pct=0;
-  let int=setInterval(()=>{
-    pct+=5; if(pct>100) pct=100;
-    el.bar.style.width=pct+"%";
-    if(pct===100){
-      clearInterval(int);
-      setTimeout(()=>{ el.pressKey.style.display="block"; },300);
-    }
-  },100);
+  function render(){
+    el.list.innerHTML = items.map((name,i)=>`
+      <div class="row ${i===sel?'active':''}" data-i="${i}">
+        <span>${name}</span><span class="arrow">›</span>
+      </div>`).join('');
+    el.list.querySelectorAll('.row').forEach(r=>{
+      r.addEventListener('click',()=>{
+        sel = +r.dataset.i; render(); openCurrent();
+      });
+    });
+  }
 
-  // Press any key to continue
-  document.addEventListener('keydown',()=>{
-    if(pct===100){
-      el.loading.style.display="none";
-      el.wrap.style.display="block";
+  function clamp(i){ return Math.max(0, Math.min(items.length-1, i)); }
+
+  function openCurrent(){
+    const name = items[sel];
+    el.crumb.textContent = name;
+    flash(`Opened: ${name}`);
+    // TODO: swap to a subpage here if you want
+  }
+
+  function flash(text){
+    el.toast.textContent = text;
+    el.toast.classList.add('show');
+    clearTimeout(flash._t);
+    flash._t = setTimeout(()=>el.toast.classList.remove('show'), 950);
+  }
+
+  // Browser testing: allow arrows/enter locally too
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'ArrowUp')   { sel = clamp(sel-1); render(); }
+    if (e.key === 'ArrowDown') { sel = clamp(sel+1); render(); }
+    if (e.key === 'ArrowLeft') { sel = clamp(sel-1); render(); }
+    if (e.key === 'ArrowRight'){ sel = clamp(sel+1); render(); }
+    if (e.key === 'Enter')     { openCurrent(); }
+  });
+
+  // Lua -> JS messages
+  window.addEventListener('message', (ev)=>{
+    const d = ev.data || {};
+    if (d.action === 'nav' && d.payload) {
+      switch(d.payload.type){
+        case 'up':   sel = clamp(sel-1); render(); break;
+        case 'down': sel = clamp(sel+1); render(); break;
+        case 'left': sel = clamp(sel-1); render(); break;  // previous
+        case 'right':sel = clamp(sel+1); render(); break;  // next
+        case 'enter':openCurrent(); break;                 // visible action
+      }
+    }
+    if (d.action === 'title' && d.payload?.text) {
+      document.querySelector('.logo-text').textContent = d.payload.text;
     }
   });
 
-  // Render tabs
-  function renderTabs(){
-    el.tabs.innerHTML = tabs.map((t,i)=>`<div class="tab ${i===currentTab?'active':''}" data-i="${i}">${t}</div>`).join('');
-    el.tabs.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-      currentTab=+t.dataset.i; renderTabs(); renderBody();
-    }));
-  }
-
-  // Render placeholder body
-  function renderBody(){
-    el.body.innerHTML="";
-    for(let i=1;i<=5;i++){
-      let div=document.createElement('div');
-      div.className="row";
-      div.textContent="Empty "+i;
-      el.body.appendChild(div);
-    }
-  }
-
-  // Notifications
-  function notify(msg){
-    let n=document.createElement('div');
-    n.className="noti"; n.textContent=msg;
-    el.notiWrap.appendChild(n);
-    setTimeout(()=>n.classList.add('show'),10);
-    setTimeout(()=>{ n.classList.remove('show'); setTimeout(()=>n.remove(),300); },3000);
-  }
-
-  // Lua messages
-  window.addEventListener('message',(ev)=>{
-    const d=ev.data||{};
-    if(d.action==="nav" && d.payload){
-      if(d.payload.type==="left"){ currentTab=(currentTab-1+tabs.length)%tabs.length; renderTabs(); renderBody(); }
-      if(d.payload.type==="right"){ currentTab=(currentTab+1)%tabs.length; renderTabs(); renderBody(); }
-      if(d.payload.type==="enter"){ notify("Selected tab: "+tabs[currentTab]); }
-    }
-  });
-
-  renderTabs(); renderBody();
+  render();
 </script>
 </body>
 </html>
