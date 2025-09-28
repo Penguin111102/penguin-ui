@@ -4,112 +4,142 @@
 <meta charset="utf-8">
 <title>Penguin Project</title>
 <style>
-  :root{
-    --bg:#0d0d0d; --row:#171717; --hover:#222;
-    --accent:#f1cad8; --txt:#eaeaea;
-    --panel-w:280px;
+  :root {
+    --bg: #0d0d0d; --row: #171717; --hover: #222;
+    --accent: #f1cad8; --txt: #eaeaea; --muted: #a9a9a9;
+    --panel-w: 280px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-
-  /* Menu */
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%) scale(0.95);opacity:0;pointer-events:none;transition:all .25s ease}
-  .wrap.show{transform:translateY(-50%) scale(1);opacity:1;pointer-events:auto}
+  .loading{position:fixed;inset:0;background:#0c0c0c;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
+  .bar{width:300px;height:18px;background:#222;border:1px solid #000;border-radius:6px;overflow:hidden;margin-top:10px}
+  .bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
+  .press-key{margin-top:20px;font-size:14px;color:#ddd;display:none}
+  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%);display:none}
   .panel{width:var(--panel-w);background:var(--bg);border:1px solid #000;border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(0,0,0,.6)}
   .banner{display:flex;align-items:center;padding:10px;background:#101010;border-bottom:1px solid #000}
   .banner img{width:28px;height:28px;object-fit:contain;margin-right:8px}
   .banner h1{margin:0;font-size:16px;font-weight:800;color:var(--accent)}
-  .list-container{overflow:hidden;position:relative;min-height:240px}
-  .list{padding:0;margin:0;position:relative}
-  .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer;position:relative;z-index:1}
+  .crumb{margin-left:auto;font-size:12px;color:var(--muted)}
+  .list{padding:4px 0}
+  .row{padding:8px 12px;font-size:13px;background:var(--row);border-bottom:1px solid #000;cursor:pointer}
   .row:last-child{border-bottom:none}
   .row:hover{background:var(--hover)}
-  .highlight{position:absolute;left:0;width:100%;height:32px;background:var(--accent);z-index:0;transition:top .2s ease}
-  .bottombar{background:#111;border-top:1px solid #000;padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;color:#aaa}
+  .row.active{background:var(--accent);color:#000;font-weight:700}
+  /* Notifications */
+  .noti-wrap{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:10000}
+  .noti{background:#111;border:1px solid #000;padding:8px 12px;font-size:13px;color:#eee;border-radius:6px;opacity:0;transform:translateX(120%);transition:all .3s ease}
+  .noti.show{opacity:1;transform:translateX(0)}
 </style>
 </head>
 <body>
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div style="color:var(--accent);font-size:20px;font-weight:700">Penguin Project</div>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+    <div class="press-key" id="pressKey">Press any key to open</div>
+  </div>
+
   <!-- Menu -->
   <div class="wrap" id="menuWrap">
     <div class="panel">
       <div class="banner">
         <img src="image.png" alt="">
         <h1>Penguin Project</h1>
+        <p class="crumb" id="crumb">Main</p>
       </div>
-      <div class="list-container">
-        <div class="list" id="menuList"></div>
-        <div class="highlight" id="highlight"></div>
-      </div>
-      <div class="bottombar">
-        <span>credit: penguin</span>
-        <span>lala&lt;3</span>
-      </div>
+      <div class="list" id="menuList"></div>
     </div>
   </div>
 
+  <div class="noti-wrap" id="notiWrap"></div>
+
 <script>
-  const mains=["Player","Server","Weapon","Combat","Vehicle","Visual","Miscellaneous","Settings","Search"];
-  const subs={
-    "Player":["Health","Armor","NoClip","Godmode"],
-    "Server":["Restart","Info"],
+  const mains = ["Self","Weapon","Vehicle","World","Online","Misc","Settings"];
+  const subs = {
+    "Self":["Health","Armor","NoClip","Godmode"],
     "Weapon":["Give All","Infinite Ammo","No Recoil"],
-    "Combat":["Aimbot","Triggerbot"],
     "Vehicle":["Spawn Car","Repair","Boost"],
-    "Visual":["ESP","Crosshair","Radar"],
-    "Miscellaneous":["Configs","Fun Stuff"],
-    "Settings":["Theme","Keybinds","Save Config"],
-    "Search":[]
+    "World":["Weather","Time","Gravity"],
+    "Online":["Player List","Teleport to Player","Tase Player"],
+    "Misc":["ESP","Crosshair","NoClip Speed"],
+    "Settings":["Theme","Keybinds","Save Config"]
   };
 
-  let current="main",sel=0,menuOpen=false;
-  const el={
-    wrap:document.getElementById("menuWrap"),
-    list:document.getElementById("menuList"),
-    highlight:document.getElementById("highlight")
+  let current = "main"; // "main" or name of submenu
+  let sel = 0;
+
+  const el = {
+    loading: document.getElementById("loading"),
+    bar: document.getElementById("barFill"),
+    pressKey: document.getElementById("pressKey"),
+    wrap: document.getElementById("menuWrap"),
+    list: document.getElementById("menuList"),
+    crumb: document.getElementById("crumb"),
+    notiWrap: document.getElementById("notiWrap")
   };
 
-  // Toggle menu with F6
-  document.addEventListener("keydown",(e)=>{
-    if(e.code==="F6" || e.key==="F6" || e.which===117){
-      menuOpen=!menuOpen;
-      if(menuOpen){el.wrap.classList.add("show");render();}
-      else{el.wrap.classList.remove("show");}
-      return;
+  // Loading
+  let pct=0,int=setInterval(()=>{
+    pct+=5; if(pct>100)pct=100;
+    el.bar.style.width=pct+"%";
+    if(pct===100){clearInterval(int);setTimeout(()=>el.pressKey.style.display="block",300);}
+  },100);
+
+  document.addEventListener("keydown",()=>{
+    if(pct===100 && el.loading.style.display!=="none"){
+      el.loading.style.display="none";
+      el.wrap.style.display="block";
+      render();
     }
-
-    if(!menuOpen) return;
-
-    const items=(current==="main")?mains:subs[current];
-    if(e.code==="ArrowUp"){sel=Math.max(0,sel-1);render();}
-    if(e.code==="ArrowDown"){sel=Math.min(items.length-1,sel+1);render();}
-    if(e.code==="Enter"){open();}
-    if(e.code==="Backspace"){back();}
   });
 
   function render(){
-    const items=(current==="main")?mains:subs[current];
-    el.list.innerHTML=items.map((n,i)=>`
-      <div class="row ${i===sel?"active":""}" data-i="${i}">${n} ›</div>`).join("");
-    updateHighlight();
-  }
-
-  function updateHighlight(){
-    const rowHeight=32;
-    el.highlight.style.top=(sel*rowHeight)+"px";
+    const items = (current==="main")? mains : subs[current];
+    el.crumb.textContent = current==="main"?"Main":current;
+    el.list.innerHTML = items.map((name,i)=>`
+      <div class="row ${i===sel?"active":""}" data-i="${i}">${name} ›</div>`).join("");
+    el.list.querySelectorAll(".row").forEach(r=>{
+      r.addEventListener("click",()=>{sel=+r.dataset.i;open();});
+    });
   }
 
   function open(){
-    if(current==="main"){current=mains[sel];sel=0;render();}
-    else{console.log("Clicked:",subs[current][sel]);}
+    if(current==="main"){
+      const chosen=mains[sel];current=chosen;sel=0;render();
+    }else{
+      notify("Clicked: "+subs[current][sel]);
+    }
   }
 
   function back(){
     if(current!=="main"){current="main";sel=0;render();}
-    else{menuOpen=false;el.wrap.classList.remove("show");}
+    else{el.wrap.style.display="none";}
   }
 
-  // Initial render
-  render();
+  function clamp(i,arr){return Math.max(0,Math.min(arr.length-1,i));}
+
+  function notify(msg){
+    let n=document.createElement("div");
+    n.className="noti";n.textContent=msg;
+    el.notiWrap.appendChild(n);
+    setTimeout(()=>n.classList.add("show"),10);
+    setTimeout(()=>{n.classList.remove("show");setTimeout(()=>n.remove(),300);},3000);
+  }
+
+  // Lua messages
+  window.addEventListener("message",(ev)=>{
+    const d=ev.data||{};
+    const items=(current==="main")?mains:subs[current];
+    if(d.action==="nav"&&d.payload){
+      switch(d.payload.type){
+        case "up": sel=clamp(sel-1,items);render();break;
+        case "down": sel=clamp(sel+1,items);render();break;
+        case "enter": open();break;
+        case "back": back();break;
+      }
+    }
+  });
 </script>
 </body>
 </html>
