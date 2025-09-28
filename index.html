@@ -4,68 +4,109 @@
 <meta charset="utf-8" />
 <title>Penguin Project</title>
 <style>
-  :root { --bg:#0d0d0d; --row:#1a1a1a; --hover:#2a2a2a; --accent:#f1cad8; --txt:#eaeaea; }
+  :root {
+    --bg: rgba(15,15,15,0.85); /* transparent background */
+    --row: rgba(30,30,30,0.85);
+    --hover: rgba(40,40,40,0.9);
+    --accent: #f1cad8; /* pastel pink */
+    --txt: #eaeaea;
+    --muted: #aaa;
+  }
   html,body {margin:0;height:100%;background:transparent;font-family:Arial,sans-serif;color:var(--txt);}
-  .wrap{position:fixed;top:50%;left:40px;transform:translateY(-50%);}
-  .panel{width:300px;height:420px;background:var(--bg);border-radius:6px;overflow:hidden;box-shadow:0 0 15px rgba(0,0,0,.6);display:flex;flex-direction:column;}
-  .banner{height:120px;background:url('hello-kitty.png') center/cover;}
-  .list{flex:1;overflow:hidden;position:relative;}
-  .row{height:32px;line-height:32px;padding:0 14px;border-bottom:1px solid #000;display:flex;justify-content:space-between;align-items:center;}
-  .row.active{background:var(--accent);color:#000;font-weight:600;}
-  .highlight{position:absolute;left:0;width:100%;height:32px;background:var(--accent);z-index:0;transition:top .2s ease;}
-  .bottombar{background:#111;padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;}
-  .checkbox::after{content:"[ ]";}
-  .checkbox.active::after{content:"[x]";}
-  .slider{flex:1;margin-left:10px;height:4px;background:#444;position:relative;}
-  .slider-thumb{width:8px;height:8px;background:#fff;position:absolute;top:-2px;}
+  .wrap {position:fixed;top:50%;left:40px;transform:translateY(-50%);}
+  .panel {width:280px;height:480px;background:var(--bg);border-radius:6px;overflow:hidden;
+          box-shadow:0 0 20px rgba(0,0,0,.7);display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.1);}
+  .banner {height:100px;background:#111 url('hello-kitty.png') center/cover no-repeat;}
+  .list-container {flex:1;position:relative;overflow:hidden;}
+  .list {margin:0;padding:0;list-style:none;position:relative;}
+  .row {height:36px;line-height:36px;padding:0 14px;font-size:14px;cursor:pointer;
+        border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;
+        background:var(--row);}
+  .row:last-child{border-bottom:none;}
+  .row:hover {background:var(--hover);}
+  .row.active {background:var(--accent);color:#000;font-weight:600;}
+  .arrow {font-size:12px;color:var(--muted);}
+  .row.active .arrow{color:#000;}
+  .scrollbar{position:absolute;left:0;top:0;bottom:0;width:6px;background:rgba(255,255,255,0.05);}
+  .scroll-thumb{width:100%;height:36px;background:var(--accent);position:absolute;left:0;top:0;transition:top .2s;}
+  .bottombar{background:rgba(20,20,20,0.9);padding:4px 8px;font-size:11px;display:flex;justify-content:space-between;
+             border-top:1px solid rgba(255,255,255,0.1);}
+  .statusbar{background:rgba(0,0,0,0.6);padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;color:#fff;}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="panel">
       <div class="banner"></div>
-      <div class="list" id="menuList"></div>
-      <div class="highlight" id="highlight"></div>
+      <div class="list-container">
+        <ul class="list" id="menuList"></ul>
+        <div class="scrollbar"><div class="scroll-thumb" id="scrollThumb"></div></div>
+      </div>
       <div class="bottombar"><span>credit: penguin</span><span>lala&lt;3</span></div>
+      <div class="statusbar"><span id="statusLeft">ID: ???</span><span id="statusRight">0/0</span></div>
     </div>
   </div>
 
 <script>
-  let menu=[], current="main", stack=[], selected=0;
-  const el={list:document.getElementById("menuList"),highlight:document.getElementById("highlight")};
+  let menus = {
+    "main": [
+      {id:"general", label:"General"},
+      {id:"weapons", label:"Weapons"},
+      {id:"visuals", label:"Visuals"}
+    ],
+    "general": [
+      {id:"godmode", label:"Godmode", type:"checkbox", value:false},
+      {id:"speed", label:"Speed Multiplier", type:"slider", min:1,max:10,value:1}
+    ],
+    "weapons": [
+      {id:"giveall", label:"Give All Weapons", type:"button"},
+      {id:"ammo", label:"Infinite Ammo", type:"checkbox", value:false}
+    ],
+    "visuals": [
+      {id:"esp", label:"ESP", type:"checkbox", value:false},
+      {id:"crosshair", label:"Crosshair", type:"checkbox", value:true}
+    ]
+  };
 
-  function render(items){
-    menu=items; el.list.innerHTML="";
+  let current="main", selected=0, stack=[];
+
+  const el={list:document.getElementById("menuList"),thumb:document.getElementById("scrollThumb"),
+            statusLeft:document.getElementById("statusLeft"),statusRight:document.getElementById("statusRight")};
+
+  function renderMenu(){
+    let items=menus[current]; el.list.innerHTML="";
     items.forEach((item,i)=>{
-      const row=document.createElement("div");
+      const row=document.createElement("li");
       row.className="row"+(i===selected?" active":"");
-      row.dataset.id=item.id; row.dataset.type=item.type;
-      let label=document.createElement("span"); label.textContent=item.label;
-      row.appendChild(label);
-
-      if(item.type==="checkbox"){ row.classList.add("checkbox"); if(item.value) row.classList.add("active"); }
-      if(item.type==="slider"){ let s=document.createElement("div"); s.className="slider";
-        let thumb=document.createElement("div"); thumb.className="slider-thumb";
-        thumb.style.left=((item.value-item.min)/(item.max-item.min))*100+"%";
-        s.appendChild(thumb); row.appendChild(s);
-      }
+      row.innerHTML=`<span>${item.label}</span><span class="arrow">›</span>`;
       el.list.appendChild(row);
     });
-    updateHighlight();
+    updateScroll();
+    el.statusRight.textContent=(selected+1)+"/"+items.length;
   }
 
-  function updateHighlight(){ el.highlight.style.top=(selected*32)+"px"; }
+  function updateScroll(){
+    const total=menus[current].length;
+    const pos=(selected/(total>1?total-1:1))*(420-36); // panel height minus thumb
+    el.thumb.style.top=pos+"px";
+  }
 
   window.addEventListener("message",ev=>{
     const d=ev.data||{};
-    if(d.action==="menu" && d.payload){ render(d.payload.items); }
     if(d.action==="nav" && d.payload){
-      if(d.payload.type==="up" && selected>0){selected--;render(menu);}
-      if(d.payload.type==="down" && selected<menu.length-1){selected++;render(menu);}
-      if(d.payload.type==="enter"){ let item=menu[selected]; if(item.type==="category"){ stack.push({menu,selected}); render(item.children); selected=0; } else { parent.postMessage({action:item.type,id:item.id},"*"); } }
-      if(d.payload.type==="back"){ if(stack.length>0){ let st=stack.pop(); render(st.menu); selected=st.selected; } }
+      let items=menus[current];
+      if(d.payload.type==="up"   && selected>0){selected--;renderMenu();}
+      if(d.payload.type==="down" && selected<items.length-1){selected++;renderMenu();}
+      if(d.payload.type==="enter"){ 
+        let item=items[selected];
+        if(menus[item.id]){ stack.push({menu:current,sel:selected}); current=item.id; selected=0; renderMenu();}
+        else { console.log("Selected:",item.id); }
+      }
+      if(d.payload.type==="back"){ if(stack.length>0){ let st=stack.pop(); current=st.menu; selected=st.sel; renderMenu(); } }
     }
   });
+
+  renderMenu();
 </script>
 </body>
 </html>
