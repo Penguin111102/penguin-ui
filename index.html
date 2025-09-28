@@ -6,40 +6,33 @@
 <title>Penguin Project</title>
 <style>
   :root {
-    --bg: #0d0d0d;
-    --row: #1a1a1a;
-    --hover: #2a2a2a;
-    --accent: #f1cad8; /* pastel pink highlight */
-    --txt: #eaeaea;
-    --muted: #aaa;
+    --bg:#0d0d0d; --row:#1a1a1a; --hover:#2a2a2a;
+    --accent:#f1cad8; --txt:#eaeaea; --muted:#aaa;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
   html,body {
     margin:0; height:100%; background:transparent;
     font-family: Arial, Helvetica, sans-serif; color:var(--txt);
   }
-  .wrap {
-    position:fixed; top:50%; left:40px; transform:translateY(-50%);
-  }
+
+  .wrap { position:fixed; top:50%; left:40px; transform:translateY(-50%); }
   .panel {
-    width:260px; background:var(--bg);
+    width:280px; background:var(--bg);
     border-radius:6px; overflow:hidden;
-    box-shadow:0 0 15px rgba(0,0,0,0.6);
+    box-shadow:0 0 15px rgba(0,0,0,.6);
     border:1px solid #000;
     display:flex; flex-direction:column;
   }
-  .banner {
-    background:#111; padding:12px;
-    text-align:center; border-bottom:1px solid #000;
+
+  /* Banner */
+  .banner img {
+    width:100%; display:block;
+    height:120px; object-fit:cover;
   }
-  .banner h1 {
-    margin:0; font-size:17px; font-weight:800;
-    color:var(--accent); letter-spacing:0.5px;
-  }
-  .list {
-    position:relative;
-    padding:0; margin:0; flex:1;
-  }
+
+  /* Menu list */
+  .list-container { position:relative; flex:1; overflow:hidden; }
+  .list { margin:0; padding:0; list-style:none; position:relative; }
   .row {
     padding:9px 14px; font-size:14px;
     cursor:pointer; user-select:none;
@@ -49,38 +42,64 @@
   }
   .row:last-child { border-bottom:none; }
   .row:hover { background:var(--hover); }
-  .arrow {
-    font-size:12px; color:var(--muted);
-    opacity:0; transition:opacity .2s;
+  .row.active { background:var(--accent); color:#000; font-weight:600; }
+
+  /* Scroll bar */
+  .scrollbar {
+    position:absolute; left:0; top:0; bottom:0;
+    width:6px; background:#111;
   }
-  .row.active .arrow,
-  .row:hover .arrow { opacity:1; color:var(--accent); }
-  .highlight {
-    position:absolute; left:0; width:100%; height:32px;
-    background:var(--accent); z-index:0;
+  .scroll-thumb {
+    width:100%; height:32px;
+    background:var(--accent);
     transition:top .2s ease;
+    position:absolute; left:0; top:0;
   }
-  .row.active { color:#000; font-weight:600; }
+
+  /* Arrows */
+  .arrow { font-size:12px; color:var(--muted); }
+  .row.active .arrow { color:#000; }
+
+  /* Bottom bar */
   .bottombar {
     background:#111; border-top:1px solid #000;
     padding:4px 8px; font-size:11px;
     display:flex; justify-content:space-between;
     color:var(--muted);
   }
+
+  /* Notifications */
+  .notif-container {
+    position:fixed; bottom:20px; right:20px;
+    display:flex; flex-direction:column; gap:8px;
+    z-index:9999;
+  }
+  .notif {
+    background:rgba(0,0,0,0.8); color:var(--txt);
+    padding:8px 12px; border-radius:4px;
+    font-size:13px; min-width:180px;
+    box-shadow:0 0 6px rgba(0,0,0,0.5);
+    animation:fadein .3s;
+  }
+  @keyframes fadein { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="panel" id="panel">
-      <div class="banner"><h1>Penguin Project</h1></div>
-      <div class="list" id="menuList"></div>
-      <div class="highlight" id="highlight"></div>
+    <div class="panel">
+      <div class="banner"><img src="hello-kitty.png" alt="Penguin Banner"></div>
+      <div class="list-container">
+        <ul class="list" id="menuList"></ul>
+        <div class="scrollbar"><div class="scroll-thumb" id="scrollThumb"></div></div>
+      </div>
       <div class="bottombar">
         <span>credit: penguin</span>
         <span>lala&lt;3</span>
       </div>
     </div>
   </div>
+
+  <div class="notif-container" id="notifContainer"></div>
 
 <script>
   let menuItems = [
@@ -91,30 +110,38 @@
 
   const el = {
     list: document.getElementById('menuList'),
-    highlight: document.getElementById('highlight')
+    thumb: document.getElementById('scrollThumb'),
+    notif: document.getElementById('notifContainer')
   };
 
   function renderMenu(){
     el.list.innerHTML = menuItems.map((name,i)=>(
-      `<div class="row ${i===selected?'active':''}" data-i="${i}">
-         <span>${name}</span>
-         <span class="arrow">›</span>
-       </div>`
+      `<li class="row ${i===selected?'active':''}" data-i="${i}">
+         <span>${name}</span><span class="arrow">›</span>
+       </li>`
     )).join('');
-    updateHighlight();
+    updateScroll();
   }
 
-  function updateHighlight(){
-    const rowHeight = 32; // must match .highlight height
-    el.highlight.style.top = (selected*rowHeight)+"px";
+  function updateScroll(){
+    const rowHeight=32;
+    el.thumb.style.top = (selected*rowHeight)+"px";
+  }
+
+  function addNotification(msg){
+    const n=document.createElement("div");
+    n.className="notif"; n.innerText=msg;
+    el.notif.appendChild(n);
+    setTimeout(()=>n.remove(),4000);
   }
 
   window.addEventListener('message', ev=>{
-    const d = ev.data||{};
+    const d=ev.data||{};
     if(d.action==="nav" && d.payload){
       if(d.payload.type==="up"   && selected>0){ selected--; renderMenu(); }
       if(d.payload.type==="down" && selected<menuItems.length-1){ selected++; renderMenu(); }
-      if(d.payload.type==="enter"){ console.log("Selected:", menuItems[selected]); }
+      if(d.payload.type==="enter"){ addNotification("Selected: "+menuItems[selected]); }
+      if(d.payload.type==="back"){ addNotification("Back"); }
     }
   });
 
