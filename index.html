@@ -5,145 +5,92 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Penguin Project</title>
 <style>
-  :root{
-    --panel-w: 300px;
-    --bg:#0c0c0c; --row:#171717; --hover:#222;
-    --accent:#f1cad8; /* pastel pink */
-    --txt:#eaeaea; --muted:#a9a9a9;
+  :root {
+    --bg: #0d0d0d;
+    --row: #1a1a1a;
+    --hover: #2a2a2a;
+    --accent: #f1cad8; /* pastel pink highlight */
+    --txt: #eaeaea;
+    --muted: #aaa;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:transparent;font-family:Arial,Helvetica,sans-serif;color:var(--txt)}
-  .wrap{position:fixed;left:40px;top:50%;transform:translateY(-50%)}
-
-  .panel{
-    width:var(--panel-w);
-    background:var(--bg);
+  * { box-sizing: border-box; }
+  html,body {
+    margin:0; height:100%; background:transparent;
+    font-family: Arial, Helvetica, sans-serif; color:var(--txt);
+  }
+  .wrap {
+    position:fixed; top:50%; left:40px; transform:translateY(-50%);
+  }
+  .panel {
+    width:260px; background:var(--bg);
+    border-radius:6px; overflow:hidden;
+    box-shadow:0 0 15px rgba(0,0,0,0.6);
     border:1px solid #000;
-    border-radius:8px;
-    overflow:hidden;
-    box-shadow:0 0 16px rgba(0,0,0,.6);
   }
-
-  /* Banner with PNG */
-  .banner{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#101010;border-bottom:1px solid #000;position:relative}
-  .banner::after{
-    content:"";position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(160px 60px at 30% 50%, rgba(241,202,216,.22), transparent 60%);
+  .banner {
+    background:#111; padding:14px;
+    text-align:center; border-bottom:1px solid #000;
   }
-  .logo-img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(241,202,216,.28))}
-  .logo-text{margin:0;font-size:17px;font-weight:800;color:var(--accent);letter-spacing:.4px}
-  .crumb{margin:0 0 0 auto;font-size:12px;color:var(--muted)}
-
-  .list{padding:4px 0}
-  .row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:8px 12px;               /* thinner rows */
-    font-size:13px;
-    background:var(--row);
-    border-bottom:1px solid #000;
-    cursor:pointer;user-select:none;
-    transition:background .12s ease, color .12s ease;
+  .banner h1 {
+    margin:0; font-size:18px; font-weight:700;
+    color:var(--accent); letter-spacing:0.5px;
   }
-  .row:last-child{border-bottom:none}
-  .row:hover{background:var(--hover)}
-  .row.active{
-    background:var(--accent);
-    color:#000;
-    font-weight:700;
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);
+  .list { padding:6px 0; }
+  .row {
+    padding:10px 14px; font-size:14px;
+    cursor:pointer; user-select:none;
+    background:var(--row); border-bottom:1px solid #000;
+    display:flex; justify-content:space-between; align-items:center;
   }
-  .arrow{font-size:12px;color:var(--muted)}
-  .row.active .arrow{color:#000}
-
-  .toast{
-    position:absolute;left:12px;bottom:10px;background:#111;border:1px solid #000;
-    color:#ddd;font-size:12px;padding:6px 10px;border-radius:6px;opacity:0;
-    transition:opacity .15s ease; pointer-events:none;
-  }
-  .toast.show{opacity:1}
+  .row:last-child { border-bottom:none; }
+  .row:hover { background:var(--hover); }
+  .row.active { background:var(--accent); color:#000; font-weight:600; }
+  .arrow { font-size:12px; color:var(--muted); }
+  .row.active .arrow { color:#000; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="panel">
-      <div class="banner">
-        <!-- Upload penguin.png to your repo root -->
-        <img class="logo-img" src="penguin.png" alt="">
-        <h1 class="logo-text">Penguin Project</h1>
-        <p class="crumb" id="crumb">Main menu</p>
-        <div class="toast" id="toast"></div>
-      </div>
-
+    <div class="panel" id="panel">
+      <div class="banner"><h1>Penguin Project</h1></div>
       <div class="list" id="menuList"></div>
     </div>
   </div>
 
 <script>
-  // Phaze-like main list
-  let items = ["Player","Server","Weapon","Combat","Vehicle","Visual","Miscellaneous","Settings","Search"];
-  let sel = 0;
+  let menuItems = [
+    "Player","Server","Weapon","Combat",
+    "Vehicle","Visual","Miscellaneous","Settings","Search"
+  ];
+  let selected = 0;
 
-  const el = {
-    list:  document.getElementById('menuList'),
-    crumb: document.getElementById('crumb'),
-    toast: document.getElementById('toast'),
-  };
+  const el = { list: document.getElementById('menuList') };
 
-  function render(){
-    el.list.innerHTML = items.map((name,i)=>`
-      <div class="row ${i===sel?'active':''}" data-i="${i}">
-        <span>${name}</span><span class="arrow">›</span>
-      </div>`).join('');
+  function renderMenu(){
+    el.list.innerHTML = menuItems.map((name,i)=>(
+      `<div class="row ${i===selected?'active':''}" data-i="${i}">
+         <span>${name}</span>
+         <span class="arrow">›</span>
+       </div>`
+    )).join('');
     el.list.querySelectorAll('.row').forEach(r=>{
       r.addEventListener('click',()=>{
-        sel = +r.dataset.i; render(); openCurrent();
+        selected = +r.dataset.i; renderMenu();
+        console.log("Clicked:", menuItems[selected]);
       });
     });
   }
 
-  function clamp(i){ return Math.max(0, Math.min(items.length-1, i)); }
-
-  function openCurrent(){
-    const name = items[sel];
-    el.crumb.textContent = name;
-    flash(`Opened: ${name}`);
-    // TODO: swap to a subpage here if you want
-  }
-
-  function flash(text){
-    el.toast.textContent = text;
-    el.toast.classList.add('show');
-    clearTimeout(flash._t);
-    flash._t = setTimeout(()=>el.toast.classList.remove('show'), 950);
-  }
-
-  // Browser testing: allow arrows/enter locally too
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'ArrowUp')   { sel = clamp(sel-1); render(); }
-    if (e.key === 'ArrowDown') { sel = clamp(sel+1); render(); }
-    if (e.key === 'ArrowLeft') { sel = clamp(sel-1); render(); }
-    if (e.key === 'ArrowRight'){ sel = clamp(sel+1); render(); }
-    if (e.key === 'Enter')     { openCurrent(); }
-  });
-
-  // Lua -> JS messages
-  window.addEventListener('message', (ev)=>{
-    const d = ev.data || {};
-    if (d.action === 'nav' && d.payload) {
-      switch(d.payload.type){
-        case 'up':   sel = clamp(sel-1); render(); break;
-        case 'down': sel = clamp(sel+1); render(); break;
-        case 'left': sel = clamp(sel-1); render(); break;  // previous
-        case 'right':sel = clamp(sel+1); render(); break;  // next
-        case 'enter':openCurrent(); break;                 // visible action
-      }
-    }
-    if (d.action === 'title' && d.payload?.text) {
-      document.querySelector('.logo-text').textContent = d.payload.text;
+  window.addEventListener('message', ev=>{
+    const d = ev.data||{};
+    if(d.action==="nav" && d.payload){
+      if(d.payload.type==="up"   && selected>0){ selected--; renderMenu(); }
+      if(d.payload.type==="down" && selected<menuItems.length-1){ selected++; renderMenu(); }
+      if(d.payload.type==="enter"){ console.log("Selected:", menuItems[selected]); }
     }
   });
 
-  render();
+  renderMenu();
 </script>
 </body>
 </html>
